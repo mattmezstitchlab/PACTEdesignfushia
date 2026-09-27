@@ -59,7 +59,12 @@ function detecterDate(texte: string): Champ<string> {
 
 function detecterMontant(texte: string): { montant: Champ<number>; devise: Champ<string> } {
   const t = texte.replace(/[\u202f\u00a0]/g, ' ');
-  const m = t.match(/(\d[\d\s.,]*)\s?(€|euros?|EUR|FCFA|F\s?CFA|\$|USD|CHF|£|MAD|DT|DA)\b/i);
+  // (?!\w) plutôt que \b : un montant suivi d'une ponctuation (ex. « 1 500 €, »)
+  // doit être détecté — \b échoue quand le symbole de devise (non alphanumérique)
+  // est immédiatement suivi d'un signe de ponctuation (non alphanumérique lui
+  // aussi) : aucune frontière \w/\W ne s'y forme. Bug identifié et corrigé le
+  // 27/09 lors de la vérification fonctionnelle du hero conversationnel.
+  const m = t.match(/(\d[\d\s.,]*)\s?(€|euros?|EUR|FCFA|F\s?CFA|\$|USD|CHF|£|MAD|DT|DA)(?!\w)/i);
   if (!m) return { montant: { valeur: null, confiance: 'inconnue' }, devise: { valeur: null, confiance: 'inconnue' } };
   const n = parseFloat(m[1].replace(/\s/g, '').replace(',', '.'));
   if (isNaN(n)) return { montant: { valeur: null, confiance: 'inconnue' }, devise: { valeur: null, confiance: 'inconnue' } };
