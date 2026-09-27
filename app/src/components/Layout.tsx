@@ -49,13 +49,29 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     api.alertes.list({ statut: 'active' }).then((a) => setAlertesActives(a.length)).catch(() => {});
   }, [loc.pathname]);
 
+  // Échap referme le menu ouvert en overlay (pertinent surtout sur les
+  // pages immersives, où la sidebar n'est jamais visible autrement).
+  useEffect(() => {
+    if (!ouvert) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOuvert(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [ouvert]);
+
   const titreCourant = LIENS.find((l) => (l.exact ? loc.pathname === l.to : loc.pathname.startsWith(l.to)))?.label
     || (loc.pathname.startsWith('/contrats/') ? 'Fiche contrat' : loc.pathname.startsWith('/nouveau') ? 'Nouveau pacte' : loc.pathname.startsWith('/regles-ia') ? 'Règles & transparence IA' : 'PACTE');
 
   return (
     <div className="app-shell">
       {ouvert && <div className="sidebar-backdrop no-print" onClick={() => setOuvert(false)} />}
-      <aside className={`sidebar no-print ${ouvert ? 'sidebar-open' : ''} ${chromeless ? 'sidebar-immersive' : ''}`}>
+      {/* Sur les pages immersives, la sidebar est hors-écran en permanence
+          tant qu'elle n'est pas ouverte : inert évite que le clavier/lecteur
+          d'écran y accède avant la barre flottante visible (ordre de
+          tabulation correct). */}
+      <aside
+        className={`sidebar no-print ${ouvert ? 'sidebar-open' : ''} ${chromeless ? 'sidebar-immersive' : ''}`}
+        {...(chromeless && !ouvert ? { inert: true } : {})}
+      >
         <div className="sidebar-top">
           <Link to="/" className="logo">
             <span className="logo-mark">P<span className="logo-dot">.</span></span>

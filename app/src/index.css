@@ -152,10 +152,10 @@ body:has(.sidebar-immersive.sidebar-open) .sidebar-backdrop { display: block; po
    photo en dessous, sans overlay ni dégradé ajouté sur l'image. */
 .immersive-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 35; display: flex; align-items: center; justify-content: space-between; padding: clamp(18px,3vw,28px) clamp(18px,4vw,40px); pointer-events: none; }
 .immersive-bar > * { pointer-events: auto; }
-.immersive-logo, .immersive-back { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display), sans-serif; font-weight: 800; font-size: 15px; letter-spacing: -.01em; color: #fff; mix-blend-mode: difference; }
+.immersive-logo, .immersive-back { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display), sans-serif; font-weight: 800; font-size: 15px; letter-spacing: -.01em; color: #fff; mix-blend-mode: difference; padding: 12px 4px; margin: -12px -4px; }
 .immersive-logo .logo-dot { color: #fff; }
-.immersive-menu-btn { display: grid; place-items: center; width: 42px; height: 42px; border: 0; background: transparent; color: #fff; mix-blend-mode: difference; border-radius: 50%; }
-.immersive-menu-btn:hover { background: rgba(255,255,255,.14); mix-blend-mode: normal; color: var(--n-graphite); }
+.immersive-menu-btn { display: grid; place-items: center; width: 44px; height: 44px; border: 0; background: transparent; color: #fff; mix-blend-mode: difference; border-radius: 50%; }
+.immersive-menu-btn:hover, .immersive-menu-btn:focus-visible { background: rgba(255,255,255,.14); mix-blend-mode: normal; color: var(--n-graphite); }
 
 .app-content-immersive { padding: 0; margin: 0; max-width: none; width: 100%; flex: 1; }
 .app-footer-minimal { border-top: 1px solid var(--n-line); color: var(--n-secondary); background: var(--n-white); }
@@ -448,7 +448,7 @@ tbody tr:hover { background: #fbf9f8; }
 .ed-section { position: relative; width: 100%; }
 
 /* ---- HERO plein cadre ---- */
-.ed-hero { position: relative; width: 100%; height: 100svh; min-height: 560px; max-height: 980px; overflow: hidden; display: flex; align-items: flex-end; color: #fff; }
+.ed-hero { position: relative; width: 100%; height: 100vh; height: 100svh; min-height: 560px; max-height: 980px; overflow: hidden; display: flex; align-items: flex-end; color: #fff; }
 .ed-hero-media { position: absolute; inset: 0; }
 .ed-hero-media img { width: 100%; height: 100%; object-fit: cover; }
 .ed-hero-scrim { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.18) 46%, rgba(0,0,0,.34) 100%); }
