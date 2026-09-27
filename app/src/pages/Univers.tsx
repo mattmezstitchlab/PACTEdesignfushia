@@ -42,7 +42,7 @@ export default function Univers() {
             key={u.code}
             to={`/univers/${u.code}`}
             className="gate-panel reveal"
-            style={{ ['--u-color' as any]: u.couleur, animationDelay: `${Math.min(i, 8) * 40}ms` }}
+            style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
           >
             <span className="gate-panel-media">
               {u.media?.cover ? (
@@ -66,8 +66,8 @@ export default function Univers() {
       </div>
 
       <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
-        <p className="flex items-center gap-2 text-sm text-muted"><Globe2 className="h-4 w-4 text-fuchsia" /> Vous ne trouvez pas votre univers ? Le moteur reste le même : créez un objet et choisissez la configuration la plus proche.</p>
-        <Link to="/objets/nouveau" className="btn btn-pink btn-sm">Créer un objet</Link>
+        <p className="flex items-center gap-2 text-sm text-muted"><Globe2 className="h-4 w-4" /> Vous ne trouvez pas votre univers ? Le moteur reste le même : créez un objet et choisissez la configuration la plus proche.</p>
+        <Link to="/objets/nouveau" className="btn btn-dark btn-sm">Créer un objet</Link>
       </div>
     </div>
   );

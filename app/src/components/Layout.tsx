@@ -2,7 +2,7 @@ import { NavLink, Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, Users, GitBranch, Bell, FolderOpen,
   Plus, Scale, Menu, X, FlaskConical, Layers, ShieldCheck, Sparkles,
-  Globe2, Boxes,
+  Globe2, Boxes, ArrowLeft,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
@@ -20,12 +20,31 @@ const LIENS = [
   { to: '/analyse', label: 'Analyser un document', icon: FlaskConical },
 ];
 
+// PACTE distingue deux registres (Phase 6) :
+// — DÉCOUVERTE (/decouvrir, /univers/:code) : immersion éditoriale, chrome
+//   applicatif masqué, remplacé par une barre flottante minimale (logo ou
+//   retour + menu) qui ouvre la même navigation en overlay.
+// — APPLICATION (tout le reste) : sidebar + topbar denses, inchangées.
+// Aucune route n'est dupliquée, aucune fonctionnalité n'est retirée : la
+// navigation complète reste à un clic (bouton menu) depuis n'importe quelle
+// page immersive.
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [ouvert, setOuvert] = useState(false);
   const [alertesActives, setAlertesActives] = useState(0);
   const loc = useLocation();
 
-  useEffect(() => { setOuvert(false); }, [loc.pathname]);
+  const universDetail = /^\/univers\/[^/]+$/.test(loc.pathname);
+  const chromeless = loc.pathname === '/decouvrir' || universDetail;
+
+  // Referme le menu quand on change de page — ajustement d'état pendant le
+  // rendu (motif recommandé par React) plutôt qu'un effet qui déclenche un
+  // rendu en cascade.
+  const [dernierChemin, setDernierChemin] = useState(loc.pathname);
+  if (loc.pathname !== dernierChemin) {
+    setDernierChemin(loc.pathname);
+    setOuvert(false);
+  }
+
   useEffect(() => {
     api.alertes.list({ statut: 'active' }).then((a) => setAlertesActives(a.length)).catch(() => {});
   }, [loc.pathname]);
@@ -36,7 +55,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-shell">
       {ouvert && <div className="sidebar-backdrop no-print" onClick={() => setOuvert(false)} />}
-      <aside className={`sidebar no-print ${ouvert ? 'sidebar-open' : ''}`}>
+      <aside className={`sidebar no-print ${ouvert ? 'sidebar-open' : ''} ${chromeless ? 'sidebar-immersive' : ''}`}>
         <div className="sidebar-top">
           <Link to="/" className="logo">
             <span className="logo-mark">P<span className="logo-dot">.</span></span>
@@ -82,24 +101,37 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="app-main">
-        <header className="app-topbar no-print">
-          <div className="flex items-center gap-3">
-            <button className="mobile-menu-btn" onClick={() => setOuvert(true)} aria-label="Ouvrir le menu"><Menu className="h-5 w-5" /></button>
-            <p className="breadcrumb">{titreCourant}</p>
+        {chromeless ? (
+          <div className="immersive-bar no-print">
+            {universDetail ? (
+              <Link to="/univers" className="immersive-back"><ArrowLeft className="h-4 w-4" /> Univers</Link>
+            ) : (
+              <Link to="/" className="immersive-logo" aria-label="Aller au tableau de bord PACTE">P<span className="logo-dot">.</span></Link>
+            )}
+            <button className="immersive-menu-btn" onClick={() => setOuvert(true)} aria-label="Ouvrir le menu">
+              <Menu className="h-5 w-5" />
+            </button>
           </div>
-          <div className="top-right">
-            <Link to="/nouveau?mode=situation" className="btn btn-outline btn-sm" title="Signaler une situation" aria-label="Signaler une situation">
-              <Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">Signaler une situation</span>
-            </Link>
-            <Link to="/nouveau" className="btn btn-pink btn-sm" title="Nouveau pacte" aria-label="Nouveau pacte">
-              <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nouveau pacte</span>
-            </Link>
-          </div>
-        </header>
+        ) : (
+          <header className="app-topbar no-print">
+            <div className="flex items-center gap-3">
+              <button className="mobile-menu-btn" onClick={() => setOuvert(true)} aria-label="Ouvrir le menu"><Menu className="h-5 w-5" /></button>
+              <p className="breadcrumb">{titreCourant}</p>
+            </div>
+            <div className="top-right">
+              <Link to="/nouveau?mode=situation" className="btn btn-outline btn-sm" title="Signaler une situation" aria-label="Signaler une situation">
+                <Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">Signaler une situation</span>
+              </Link>
+              <Link to="/nouveau" className="btn btn-pink btn-sm" title="Nouveau pacte" aria-label="Nouveau pacte">
+                <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nouveau pacte</span>
+              </Link>
+            </div>
+          </header>
+        )}
 
-        <main className="app-content">{children}</main>
+        <main className={chromeless ? 'app-content-immersive' : 'app-content'}>{children}</main>
 
-        <footer className="app-footer no-print">
+        <footer className={`app-footer no-print ${chromeless ? 'app-footer-minimal' : ''}`}>
           <span>PACTE — un moteur universel pour tout accord structuré · vos données restent la source de vérité.</span>
           <span className="flex items-center gap-1.5"><Scale className="h-3.5 w-3.5" /> Information générale, pas un avis juridique.</span>
         </footer>

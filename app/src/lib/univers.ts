@@ -32,6 +32,8 @@ export interface UniversMedia {
   source?: string;
   /** Licence sous laquelle le média est réutilisé (ex. "Pexels License — libre d'usage, gratuite"). */
   licence?: string;
+  /** true si le visuel est une image générée (IA), jamais une photographie documentaire — voir credit/licence pour le disclaimer affiché à l'écran. */
+  genere?: boolean;
 }
 
 export interface UniversDef {
@@ -95,10 +97,10 @@ export const UNIVERS: UniversDef[] = [
     vigilance: ['Les décisions engageant la société méritent une traçabilité écrite systématique.'],
     media: {
       cover: '/univers/entreprise.jpg',
-      alt: 'Deux collaborateurs se serrent la main lors d’un rendez-vous professionnel.',
-      credit: 'Photo : Bia Limova',
-      source: 'https://www.pexels.com/photo/professional-handshake-in-a-business-setting-33175672/',
-      licence: 'Pexels License — libre d’usage, gratuite',
+      alt: 'Silhouette traversant un atrium de bureaux en béton et verre, dans la lumière du matin.',
+      credit: 'Image générée (IA) — direction artistique PACTE, non documentaire',
+      licence: 'Visuel généré par IA — usage éditorial, ne représente aucun lieu ni aucune personne réelle',
+      genere: true,
     },
   },
   {
@@ -255,10 +257,10 @@ export const UNIVERS: UniversDef[] = [
     vigilance: ['Les décisions d’assemblée méritent un compte rendu écrit versé au dossier.'],
     media: {
       cover: '/univers/associations.jpg',
-      alt: 'Groupe de bénévoles triant des cartons de dons vestimentaires dans un local associatif.',
-      credit: 'Photo : Gustavo Fring',
-      source: 'https://www.pexels.com/photo/people-working-at-donation-center-7156182/',
-      licence: 'Pexels License — libre d’usage, gratuite',
+      alt: 'Plusieurs mains jointes en cercle, vue du dessus, geste de solidarité collective.',
+      credit: 'Image générée (IA) — direction artistique PACTE, non documentaire',
+      licence: 'Visuel généré par IA — usage éditorial, ne représente aucune personne réelle',
+      genere: true,
     },
   },
   {
@@ -287,10 +289,10 @@ export const UNIVERS: UniversDef[] = [
     vigilance: ['Conservez les preuves (attestations, certificats) au fil de l’eau, pas a posteriori.'],
     media: {
       cover: '/univers/formation.jpg',
-      alt: 'Enseignant accompagnant des élèves dans une salle de classe lumineuse.',
-      credit: 'Photo : Yan Krukau',
-      source: 'https://www.pexels.com/photo/teacher-with-students-in-classroom-8617971/',
-      licence: 'Pexels License — libre d’usage, gratuite',
+      alt: 'Main écrivant au stylo-plume dans un carnet, à la lumière d’une lampe de bureau, entourée de livres.',
+      credit: 'Image générée (IA) — direction artistique PACTE, non documentaire',
+      licence: 'Visuel généré par IA — usage éditorial, ne représente aucune personne réelle',
+      genere: true,
     },
   },
   {
@@ -335,10 +337,10 @@ export const UNIVERS: UniversDef[] = [
     vigilance: ['Un échéancier non tenu à jour est la première cause de désaccord sur un prêt.'],
     media: {
       cover: '/univers/financement.jpg',
-      alt: 'Courtier présentant un dossier de prêt immobilier à un client, ordinateur portable ouvert sur la table.',
-      credit: 'Photo : RDNE Stock project',
-      source: 'https://www.pexels.com/photo/a-person-holding-loan-documents-8292879/',
-      licence: 'Pexels License — libre d’usage, gratuite',
+      alt: 'Main posant une pile de feuilles de papier sur un bureau en bois, lumière chaude et dirigée.',
+      credit: 'Image générée (IA) — direction artistique PACTE, non documentaire',
+      licence: 'Visuel généré par IA — usage éditorial, ne représente aucune personne réelle',
+      genere: true,
     },
   },
   {
