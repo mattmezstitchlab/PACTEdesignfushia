@@ -29,7 +29,7 @@ export default function UniversDetail() {
 
       <div className="univers-hero reveal" style={{ ['--u-color' as any]: u.couleur }}>
         <span className="univers-hero-media" aria-hidden="true">
-          {u.media?.cover ? <img src={u.media.cover} alt={u.media.alt || u.nom} /> : <span className="univers-hero-fallback" />}
+          {u.media?.cover ? <img src={u.media.cover} alt={u.media.alt || u.nom} fetchPriority="high" decoding="async" /> : <span className="univers-hero-fallback" />}
         </span>
         <span className="univers-hero-scrim" aria-hidden="true" />
         {u.media?.credit && <span className="univers-credit">{u.media.credit}</span>}
@@ -40,50 +40,33 @@ export default function UniversDetail() {
         </div>
       </div>
 
+      {/* Ordre volontaire — y compris en pile mobile : structurer → exemples →
+          objets déjà suivis → vigilance → entrer dans l'univers (CTA en dernier). */}
       <div className="detail-grid">
         <div className="space-y-5">
           <div className="card p-5">
-            <h2 className="mb-2 font-display text-lg font-semibold text-ink">Ce que PACTE organise ici</h2>
+            <h2 className="mb-1 font-display text-lg font-semibold text-ink">Ce que PACTE peut structurer ici</h2>
             <p className="mb-4 text-sm text-muted">{u.description}</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="mb-4 flex flex-wrap gap-2">
               {u.vocabulaire.map((v) => (
                 <span key={v} className="rounded-full bg-fuchsia-soft px-3 py-1.5 text-xs font-semibold text-attention">{v}</span>
+              ))}
+            </div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-faint">Le même moteur, ici comme partout</p>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">
+              {['Objets', 'Relations', 'Engagements', 'Événements', 'Preuves', 'Données', 'Analyses', 'Scénarios', 'Décisions'].map((b) => (
+                <span key={b} className="rounded-sm border border-line bg-white px-2.5 py-2 text-center text-[11px] font-semibold text-muted">{b}</span>
               ))}
             </div>
           </div>
 
           <div className="card p-5">
-            <h2 className="mb-3 font-display text-lg font-semibold text-ink">Exemples concrets</h2>
+            <h2 className="mb-3 font-display text-lg font-semibold text-ink">Exemples</h2>
             <ul className="space-y-2.5">
               {u.exemples.map((ex) => (
                 <li key={ex} className="flex gap-2.5 text-sm text-muted"><span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-fuchsia" /> {ex}</li>
               ))}
             </ul>
-          </div>
-
-          <div className="card p-5">
-            <h2 className="mb-1 font-display text-lg font-semibold text-ink">Le même moteur, ici comme partout</h2>
-            <p className="mb-3 text-sm text-muted">Relation, Engagement, Événement, Preuve, Donnée, Analyse, Scénario, Décision — les mêmes briques que dans tous les univers, jamais un système parallèle.</p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {['Relations', 'Engagements', 'Événements', 'Preuves', 'Données', 'Alertes', 'Scénarios', 'Décisions'].map((b) => (
-                <span key={b} className="rounded-sm border border-line bg-white px-2.5 py-2 text-center text-[11px] font-semibold text-muted">{b}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-5">
-          <div className="card p-5">
-            <h2 className="mb-3 font-display text-base font-semibold text-ink">Entrer dans cet univers</h2>
-            <div className="flex flex-col gap-2">
-              <Link to={`/objets/nouveau?univers=${u.code}`} className="btn btn-pink full"><Plus className="h-4 w-4" /> Créer un objet {u.nom.toLowerCase()}</Link>
-              <Link to={`/objets?univers=${u.code}`} className="btn btn-outline full">Voir les objets suivis <ArrowUpRight className="h-4 w-4" /></Link>
-            </div>
-          </div>
-
-          <div className="notice">
-            <ShieldAlert className="h-[18px] w-[18px]" />
-            <p><strong>Point de vigilance</strong> {u.vigilance[0]}</p>
           </div>
 
           <div className="card p-5">
@@ -107,6 +90,21 @@ export default function UniversDetail() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+
+        <div className="space-y-5">
+          <div className="notice">
+            <ShieldAlert className="h-[18px] w-[18px]" />
+            <p><strong>Point de vigilance</strong> {u.vigilance[0]}</p>
+          </div>
+
+          <div className="card p-5">
+            <h2 className="mb-3 font-display text-base font-semibold text-ink">Entrer dans cet univers</h2>
+            <div className="flex flex-col gap-2">
+              <Link to={`/objets/nouveau?univers=${u.code}`} className="btn btn-pink full"><Plus className="h-4 w-4" /> Créer un objet {u.nom.toLowerCase()}</Link>
+              <Link to={`/objets?univers=${u.code}`} className="btn btn-outline full">Voir les objets suivis <ArrowUpRight className="h-4 w-4" /></Link>
+            </div>
           </div>
         </div>
       </div>

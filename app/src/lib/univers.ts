@@ -25,8 +25,13 @@ export interface UniversMedia {
   cover?: string;
   coverMobile?: string;
   video?: string;
+  /** Auteur/photographe, quand identifiable auprès de la source. */
   credit?: string;
   alt?: string;
+  /** Page source d'origine (traçabilité) — jamais une URL inventée. */
+  source?: string;
+  /** Licence sous laquelle le média est réutilisé (ex. "Pexels License — libre d'usage, gratuite"). */
+  licence?: string;
 }
 
 export interface UniversDef {
@@ -73,6 +78,13 @@ export const UNIVERS: UniversDef[] = [
     vocabulaire: ['Associé', 'Collaborateur', 'Fournisseur', 'Actif', 'Décision', 'Obligation', 'Procès-verbal', 'Engagement contractuel'],
     exemples: ['Un pacte d’associés et ses engagements', 'Le suivi d’un actif d’entreprise sur plusieurs années'],
     vigilance: ['Les décisions engageant la société méritent une traçabilité écrite systématique.'],
+    media: {
+      cover: '/univers/entreprise.jpg',
+      alt: 'Deux collaborateurs se serrent la main lors d’un rendez-vous professionnel.',
+      credit: 'Photo : Bia Limova',
+      source: 'https://www.pexels.com/photo/professional-handshake-in-a-business-setting-33175672/',
+      licence: 'Pexels License — libre d’usage, gratuite',
+    },
   },
   {
     code: 'projets', nom: 'Projets', couleur: '#d97706',
@@ -91,6 +103,13 @@ export const UNIVERS: UniversDef[] = [
     vocabulaire: ['Artiste', 'Technicien', 'Producteur', 'Compagnie', 'Cachet', 'Répétition', 'Représentation', 'Heures déclarées', 'Justificatif'],
     exemples: ['La chronologie professionnelle d’un technicien du spectacle', 'Le suivi d’une production de sa création à sa tournée'],
     vigilance: ['Les simulations (cachets, heures, droits) ne sont jamais des droits acquis.'],
+    media: {
+      cover: '/univers/spectacle.jpg',
+      alt: 'Scène de spectacle vide, plongée dans un éclairage dramatique avant une représentation.',
+      credit: 'Photo : Dawn Lio',
+      source: 'https://www.pexels.com/photo/stage-with-lightings-2177813/',
+      licence: 'Pexels License — libre d’usage, gratuite',
+    },
   },
   {
     code: 'art', nom: 'Art', couleur: '#9333ea',
@@ -100,6 +119,13 @@ export const UNIVERS: UniversDef[] = [
     vocabulaire: ['Œuvre', 'Artiste', 'Propriétaire', 'Provenance', 'Exposition', 'Vente', 'Expertise', 'Certificat', 'Assurance', 'Transport', 'Restauration', 'Valeur observée'],
     exemples: ['La provenance complète d’une toile depuis son acquisition', 'Le suivi d’une œuvre prêtée pour une exposition'],
     vigilance: ['PACTE ne garantit jamais une valeur future — seulement des observations datées et sourcées.'],
+    media: {
+      cover: '/univers/art.jpg',
+      alt: 'Gros plan sur une palette et un pinceau tenus par un artiste en train de mélanger des peintures à l’huile.',
+      credit: 'Photo : Tima Miroshnichenko',
+      source: 'https://www.pexels.com/photo/person-holding-paint-palette-and-paint-brush-5033999/',
+      licence: 'Pexels License — libre d’usage, gratuite',
+    },
   },
   {
     code: 'musique', nom: 'Musique', couleur: '#16a34a',
@@ -109,6 +135,13 @@ export const UNIVERS: UniversDef[] = [
     vocabulaire: ['Auteur', 'Compositeur', 'Interprète', 'Producteur', 'Master', 'Édition', 'Licence', 'Distribution', 'Royalties', 'Concert'],
     exemples: ['La répartition des droits d’un titre entre auteurs', 'Le suivi d’une tournée et de ses cachets'],
     vigilance: ['Distinguez toujours propriété, droit, licence et cession (voir Propriété intellectuelle).'],
+    media: {
+      cover: '/univers/musique.jpg',
+      alt: 'Musicien jouant de la guitare électrique sur scène, entouré de lumières de concert.',
+      credit: 'Photo : Andy Pinaria',
+      source: 'https://www.pexels.com/photo/a-man-playing-the-electric-guitar-on-stage-10518431/',
+      licence: 'Pexels License — libre d’usage, gratuite',
+    },
   },
   {
     code: 'audiovisuel', nom: 'Audiovisuel', couleur: '#0891b2',
@@ -118,6 +151,13 @@ export const UNIVERS: UniversDef[] = [
     vocabulaire: ['Producteur', 'Réalisateur', 'Acteur', 'Technicien', 'Scénario', 'Tournage', 'Droit de diffusion', 'Financement', 'Distribution'],
     exemples: ['Le financement d’un film poste par poste', 'Le suivi des droits de diffusion d’une série'],
     vigilance: ['Les financements et droits de diffusion doivent être tracés poste par poste.'],
+    media: {
+      cover: '/univers/audiovisuel.jpg',
+      alt: 'Cadreur actionnant une caméra professionnelle pendant un tournage en intérieur.',
+      credit: 'Photo : cottonbro studio',
+      source: 'https://www.pexels.com/photo/man-in-black-shirt-sitting-on-chair-4123581/',
+      licence: 'Pexels License — libre d’usage, gratuite',
+    },
   },
   {
     code: 'propriete_intellectuelle', nom: 'Propriété intellectuelle', couleur: '#475569',
@@ -127,6 +167,13 @@ export const UNIVERS: UniversDef[] = [
     vocabulaire: ['Créateur', 'Marque', 'Logiciel', 'Licence', 'Cession', 'Territoire', 'Durée', 'Redevance'],
     exemples: ['La cession territoriale d’une licence logicielle', 'Le dépôt et le suivi d’une marque'],
     vigilance: ['Séparez toujours propriété, droit, licence, cession et utilisation.'],
+    media: {
+      cover: '/univers/propriete_intellectuelle.jpg',
+      alt: 'Main esquissant un croquis au crayon dans un carnet, en train de créer.',
+      credit: 'Photo : Ivan S',
+      source: 'https://www.pexels.com/photo/person-drawing-on-a-sketchbook-4238483/',
+      licence: 'Pexels License — libre d’usage, gratuite',
+    },
   },
   {
     code: 'immobilier', nom: 'Immobilier', couleur: '#b45309',
@@ -136,6 +183,13 @@ export const UNIVERS: UniversDef[] = [
     vocabulaire: ['Propriétaire', 'Locataire', 'Bail', 'État des lieux', 'Travaux', 'Diagnostic', 'Loyer', 'Incident'],
     exemples: ['Le suivi complet d’une location, du bail à l’état des lieux de sortie', 'Un chantier de travaux et ses preuves'],
     vigilance: ['L’état des lieux d’entrée est la pièce la plus déterminante.'],
+    media: {
+      cover: '/univers/immobilier.jpg',
+      alt: 'Façade d’une maison contemporaine minimaliste, en bois clair, entourée de verdure.',
+      credit: 'Photo : Rodrigo Neto',
+      source: 'https://www.pexels.com/photo/modern-minimalist-house-design-exterior-view-30484316/',
+      licence: 'Pexels License — libre d’usage, gratuite',
+    },
   },
   {
     code: 'biens_actifs', nom: 'Biens & actifs', couleur: '#65a30d',
@@ -145,6 +199,13 @@ export const UNIVERS: UniversDef[] = [
     vocabulaire: ['Propriétaire', 'Acheteur', 'Entretien', 'Réparation', 'Facture', 'État', 'Revente'],
     exemples: ['L’historique d’entretien d’un véhicule avant revente', 'Le suivi d’un instrument professionnel prêté'],
     vigilance: ['Photographiez et datez l’état du bien à chaque étape (achat, prêt, entretien, revente).'],
+    media: {
+      cover: '/univers/biens_actifs.jpg',
+      alt: 'Collection d’objets anciens et vintage disposés sur des étagères ouvragées.',
+      credit: 'Photo : Lokman Sevim',
+      source: 'https://www.pexels.com/photo/collection-of-vintage-accessories-9704112/',
+      licence: 'Pexels License — libre d’usage, gratuite',
+    },
   },
   {
     code: 'commerce', nom: 'Commerce', couleur: '#c026d3',
@@ -172,6 +233,13 @@ export const UNIVERS: UniversDef[] = [
     vocabulaire: ['Chercheur', 'Collaborateur', 'Hypothèse', 'Expérience', 'Donnée observée', 'Résultat', 'Publication', 'Source'],
     exemples: ['Le suivi d’un protocole de recherche et de ses versions', 'Une collaboration inter-laboratoires tracée'],
     vigilance: ['Distinguez toujours donnée observée, hypothèse et résultat validé.'],
+    media: {
+      cover: '/univers/recherche.jpg',
+      alt: 'Chercheuse utilisant du matériel de laboratoire pour une expérience scientifique.',
+      credit: 'Photo : Chokniti Khongchum',
+      source: 'https://www.pexels.com/photo/photo-of-female-scientist-working-on-laboratory-3938023/',
+      licence: 'Pexels License — libre d’usage, gratuite',
+    },
   },
   {
     code: 'formation', nom: 'Formation & carrière', couleur: '#0d9488',
@@ -181,6 +249,13 @@ export const UNIVERS: UniversDef[] = [
     vocabulaire: ['Diplôme', 'Certification', 'Compétence', 'Expérience', 'Employeur', 'Mission', 'Attestation'],
     exemples: ['Un portfolio de missions avec attestations', 'Le suivi d’une certification professionnelle'],
     vigilance: ['Conservez les preuves (attestations, certificats) au fil de l’eau, pas a posteriori.'],
+    media: {
+      cover: '/univers/formation.jpg',
+      alt: 'Enseignant accompagnant des élèves dans une salle de classe lumineuse.',
+      credit: 'Photo : Yan Krukau',
+      source: 'https://www.pexels.com/photo/teacher-with-students-in-classroom-8617971/',
+      licence: 'Pexels License — libre d’usage, gratuite',
+    },
   },
   {
     code: 'voyage', nom: 'Voyage', couleur: '#f59e0b',
@@ -190,6 +265,13 @@ export const UNIVERS: UniversDef[] = [
     vocabulaire: ['Voyageur', 'Réservation', 'Transport', 'Hébergement', 'Assurance voyage', 'Incident', 'Remboursement'],
     exemples: ['Un dossier d’annulation de vol et son remboursement', 'Le suivi d’un séjour et de ses réservations'],
     vigilance: ['Versez billets, confirmations et assurances dès leur réception.'],
+    media: {
+      cover: '/univers/voyage.jpg',
+      alt: 'Véhicule tout-terrain roulant sur une route de montagne à travers un paysage automnal.',
+      credit: 'Photo : Jakob Rosen',
+      source: 'https://www.pexels.com/photo/truck-on-a-country-road-near-mountains-9737550/',
+      licence: 'Pexels License — libre d’usage, gratuite',
+    },
   },
   {
     code: 'assurance', nom: 'Assurance', couleur: '#dc2626',
@@ -217,6 +299,13 @@ export const UNIVERS: UniversDef[] = [
     vocabulaire: ['Portefeuille', 'Actif financier', 'Transaction', 'Observation', 'Signal', 'Hypothèse', 'Scénario', 'Incertitude'],
     exemples: ['Le suivi daté d’un portefeuille et de ses transactions', 'L’historique d’observations sur un actif, sans promesse de gain'],
     vigilance: ['PACTE observe et structure ; il ne recommande, ne garantit ni ne manipule aucune valeur de marché.'],
+    media: {
+      cover: '/univers/finance_marches.jpg',
+      alt: 'Écran affichant des graphiques et courbes de marché financier en gros plan.',
+      credit: 'Photo : Rafael Minguet Delgado',
+      source: 'https://www.pexels.com/photo/financial-market-trading-screen-with-graphs-and-charts-38375328/',
+      licence: 'Pexels License — libre d’usage, gratuite',
+    },
   },
 ];
 

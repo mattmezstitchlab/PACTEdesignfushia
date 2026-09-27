@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, LayoutDashboard } from 'lucide-react';
-import { UNIVERS } from '../lib/univers';
+import { UNIVERS, universParCode } from '../lib/univers';
 
 // LANDING GLOBALE — le seuil éditorial de PACTE : émotion et projection,
 // avant la précision du Dashboard. Même identité visuelle, densité plus
@@ -8,8 +8,17 @@ import { UNIVERS } from '../lib/univers';
 // utilisateurs déjà engagés) afin de ne rien casser de l'existant :
 // cette page est le point d'entrée « découverte », lié depuis la barre
 // latérale (« Découvrir PACTE ») et depuis chaque univers.
+//
+// Direction éditoriale : une image → une idée → un univers → une action.
+// On évite volontairement l'effet catalogue (19 vignettes identiques) :
+// un univers « vedette » en grande composition asymétrique, puis un
+// aperçu plus dense pour amorcer /univers.
 export default function Decouvrir() {
-  const apercu = UNIVERS.slice(0, 6);
+  const vedette = universParCode('art');
+  const apercu = UNIVERS
+    .filter((u) => u.code !== vedette.code)
+    .sort((a, b) => Number(!!b.media?.cover) - Number(!!a.media?.cover))
+    .slice(0, 5);
 
   return (
     <div className="space-y-10">
@@ -35,11 +44,24 @@ export default function Decouvrir() {
         </div>
       </div>
 
+      <Link to={`/univers/${vedette.code}`} className="feature-panel reveal" style={{ ['--u-color' as any]: vedette.couleur }}>
+        <span className="feature-panel-media">
+          {vedette.media?.cover ? <img src={vedette.media.cover} alt={vedette.media.alt || vedette.nom} fetchPriority="high" decoding="async" /> : <span className="feature-panel-fallback" />}
+        </span>
+        {vedette.media?.credit && <span className="feature-panel-credit">{vedette.media.credit}</span>}
+        <span className="feature-panel-body">
+          <span className="eyebrow">Univers en avant · {vedette.nom}</span>
+          <h2>{vedette.manifeste}</h2>
+          <p>{vedette.description}</p>
+          <span className="gate-panel-cta">Explorer l’univers {vedette.nom} <ArrowUpRight className="h-3.5 w-3.5" /></span>
+        </span>
+      </Link>
+
       <div>
         <div className="section-heading">
           <div>
-            <h2>Quelques univers, un seul moteur</h2>
-            <p>{UNIVERS.length} configurations du même moteur — Objet, Relation, Engagement, Événement, Preuve, Donnée, Analyse, Scénario, Décision.</p>
+            <h2>D’autres univers, le même moteur</h2>
+            <p>{UNIVERS.length} configurations au total — Objet, Relation, Engagement, Événement, Preuve, Donnée, Analyse, Scénario, Décision.</p>
           </div>
           <Link to="/univers" className="link-more">Voir les {UNIVERS.length} univers <ArrowUpRight className="h-3.5 w-3.5" /></Link>
         </div>
