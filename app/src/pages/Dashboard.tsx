@@ -8,7 +8,7 @@ import { api } from '../lib/api';
 import type { Contrat, Echeance, Alerte, Evenement, Objet } from '../lib/types';
 import { fmtDate, fmtMontant, joursRestants, delaiHumain } from '../lib/format';
 import { Spinner, BadgeSante, BadgeStatut, Prudence, SectionTitre, Btn } from '../components/ui';
-import PacteHeroConversationnel from '../components/hero/PacteHeroConversationnel';
+import CreationRapide from '../components/dashboard/CreationRapide';
 
 export default function Dashboard() {
   const [contrats, setContrats] = useState<Contrat[]>([]);
@@ -79,14 +79,13 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Héro conversationnel — porte d'entrée unique de PACTE.
-          Remplace l'ancien hero-band (bandeau sombre + « Nouveau pacte »
-          et « Signaler une situation ») : les deux boutons ouvraient le
-          même écran (/nouveau), ils deviennent redondants dès lors que
-          le champ conversationnel comprend l'intention à partir du
-          texte. Le chemin pas-à-pas reste disponible (lien discret
-          ci-dessous), rien n'a été supprimé. */}
-      <PacteHeroConversationnel />
+      {/* Section fonctionnelle, pas une page d'atterrissage éditoriale :
+          /decouvrir et /univers ont déjà le traitement visuel plein
+          cadre (audit du 27/09 — ça ferait doublon ici et le Pilotage
+          sert au suivi opérationnel, pas à la découverte). L'ancien
+          champ de texte libre (comprendre.ts) a été retiré : pas assez
+          précis pour être la première impression du produit. */}
+      <CreationRapide />
 
       <div className="pacte-hero-pied">
         <div className="pacte-hero-stats">
@@ -96,8 +95,6 @@ export default function Dashboard() {
           <StatClaire chiffre={String(stats.critiques)} label="Critiques" accent="critique" />
         </div>
         <div className="pacte-hero-liens">
-          <Link to="/nouveau">Créer pas à pas, étape par étape</Link>
-          <span aria-hidden="true">·</span>
           <Link to="/univers"><Globe2 className="h-3.5 w-3.5" /> Explorer les univers</Link>
         </div>
       </div>

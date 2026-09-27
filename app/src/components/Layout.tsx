@@ -136,10 +136,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
             {/* « Signaler une situation » retiré : même écran (/nouveau) que
                 « Nouveau pacte » — deux entrées concurrentes vers le même
-                workflow (audit du 27/09). L'entrée conversationnelle du
-                Dashboard comprend désormais l'intention (créer / signaler)
-                à partir du texte ; ce bouton reste le raccourci manuel
-                unique, toujours disponible, jamais supprimé. */}
+                workflow (audit du 27/09). Ce bouton reste le raccourci
+                manuel, toujours disponible depuis n'importe quelle page,
+                vers le même assistant que les cartes du Pilotage. */}
             <div className="top-right">
               <Link to="/nouveau" className="btn btn-pink btn-sm" title="Nouveau pacte" aria-label="Nouveau pacte">
                 <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nouveau pacte</span>
