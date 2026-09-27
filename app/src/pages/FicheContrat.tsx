@@ -186,7 +186,7 @@ export default function FicheContrat() {
               const n = compte(o.id);
               return (
                 <button key={o.id} onClick={() => changerOnglet(o.id)}
-                  className={`relative flex shrink-0 cursor-pointer items-center gap-1.5 rounded-sm px-3 py-2 text-xs font-medium transition sm:text-sm ${actif ? 'bg-fuchsia text-white' : 'bg-white text-muted hover:text-ink'}`}>
+                  className={`relative flex shrink-0 cursor-pointer items-center gap-1.5 rounded-sm px-3 py-2.5 text-xs font-medium transition sm:text-sm min-h-[44px] ${actif ? 'bg-fuchsia text-white' : 'bg-white text-muted hover:text-ink'}`}>
                   <o.icon className="h-4 w-4" /> {o.label}
                   {n != null && n > 0 && (
                     <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${actif ? 'bg-white/30' : o.id === 'alertes' ? 'bg-critique-soft text-critique' : 'bg-white text-muted'}`}>{n}</span>

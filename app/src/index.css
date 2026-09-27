@@ -112,6 +112,8 @@ p { line-height: 1.6; }
 .side-link.active { background: var(--color-fuchsia); color: #fff; }
 .nav-count { margin-left: auto; background: rgba(255,255,255,.14); color: #fff; border-radius: 10px; font-size: 10px; padding: 1px 7px; font-weight: 700; }
 .side-link.active .nav-count { background: rgba(255,255,255,.28); }
+.sidebar-discover { margin: 4px 14px 6px; display: flex; align-items: center; gap: 8px; padding: 9px 13px; border-radius: 4px; background: rgba(208,10,115,.16); color: #f6c9de; font-size: 11.5px; font-weight: 700; transition: background .15s, color .15s; }
+.sidebar-discover:hover { background: var(--color-fuchsia); color: #fff; }
 .sidebar-secondary { margin-top: auto; padding: 14px; border-top: 1px solid #343235; }
 .sidebar-note { margin: 14px 14px 18px; padding: 14px; background: rgba(255,255,255,.05); border-radius: 4px; font-size: 11px; line-height: 1.6; color: #a9a6ac; }
 .sidebar-note strong { display: block; color: #e7d5e0; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
@@ -303,6 +305,60 @@ tbody tr:hover { background: #fbf9f8; }
 .alert-icon.gravite-attention { color: var(--color-attention); }
 .alert-icon.gravite-info { color: var(--color-faint); }
 
+/* ============================================================
+   PORTES D'ENTRÉE ÉDITORIALES — Landing globale (/decouvrir) et
+   Univers (/univers, /univers/:code). Densité volontairement plus
+   basse et typographie plus forte que l'application (Dashboard,
+   fiches) : ici on découvre, là-bas on agit. Même palette noir /
+   ivoire / fuchsia, aucun gradient artificiel, aucun effet 3D.
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal { animation: reveal-up .6s cubic-bezier(.16,1,.3,1) both; }
+}
+@keyframes reveal-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+.editorial-hero { position: relative; overflow: hidden; background: var(--color-ink); color: #fff; padding: clamp(48px,9vw,110px) clamp(20px,5vw,64px); }
+.editorial-hero .eyebrow { color: #f2a9c9; }
+.editorial-hero h1 { font-family: var(--font-display), sans-serif; font-weight: 800; letter-spacing: -.035em; font-size: clamp(34px, 6.4vw, 76px); line-height: 1.04; margin: 16px 0 20px; color: #fff; }
+.editorial-hero h1 em { font-style: normal; color: var(--color-fuchsia); }
+.editorial-hero p.lede { color: #cdc7cb; font-size: clamp(14px,1.7vw,18px); max-width: 640px; line-height: 1.7; }
+.editorial-hero-lines { margin: 22px 0 0; display: flex; flex-direction: column; gap: 4px; }
+.editorial-hero-lines span { font-family: var(--font-display), sans-serif; font-weight: 700; font-size: clamp(16px,2.2vw,22px); color: #e9e3e6; }
+.editorial-hero-lines span strong { color: var(--color-fuchsia); font-weight: 800; }
+
+/* Grille des portes d'entrée univers */
+.gate-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; background: var(--color-line); }
+.gate-panel { position: relative; display: flex; min-height: 300px; flex-direction: column; justify-content: flex-end; overflow: hidden; background: var(--color-ink); color: #fff; padding: 22px; transition: transform .35s cubic-bezier(.16,1,.3,1); }
+.gate-panel:hover { transform: translateY(-3px); }
+.gate-panel-media { position: absolute; inset: 0; }
+.gate-panel-media img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s cubic-bezier(.16,1,.3,1); }
+.gate-panel:hover .gate-panel-media img { transform: scale(1.045); }
+.gate-panel-fallback { position: absolute; inset: 0; background: linear-gradient(155deg, var(--u-color, var(--color-fuchsia)) 0%, #1c1b1d 78%); }
+.gate-panel-fallback::before { content: ""; position: absolute; inset: 0; opacity: .5; background-image: repeating-linear-gradient(115deg, rgba(255,255,255,.06) 0 2px, transparent 2px 34px); }
+.gate-panel-fallback::after { content: attr(data-letter); position: absolute; right: -.08em; bottom: -.24em; font-family: var(--font-display), sans-serif; font-weight: 800; font-size: 13rem; line-height: 1; color: rgba(255,255,255,.08); letter-spacing: -.05em; }
+.gate-panel-scrim { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,.78) 0%, rgba(0,0,0,.15) 55%, transparent 90%); }
+.gate-panel-body { position: relative; z-index: 1; }
+.gate-panel-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+.gate-panel h3 { font-family: var(--font-display), sans-serif; font-size: clamp(20px,1.8vw,26px); font-weight: 800; letter-spacing: -.02em; margin: 6px 0 8px; color: #fff; }
+.gate-panel p { font-size: 12.5px; line-height: 1.55; color: rgba(255,255,255,.82); margin: 0 0 12px; max-width: 34ch; }
+.gate-panel-cta { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #fff; }
+.gate-panel:hover .gate-panel-cta { color: var(--color-fuchsia); }
+.gate-vocab { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+.gate-vocab span { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,.14); color: #fff; }
+
+/* Page immersive d'un seul univers (/univers/:code) */
+.univers-hero { position: relative; overflow: hidden; min-height: 46vh; display: flex; align-items: flex-end; color: #fff; padding: clamp(28px,6vw,64px); }
+.univers-hero-media { position: absolute; inset: 0; }
+.univers-hero-media img { width: 100%; height: 100%; object-fit: cover; }
+.univers-hero-fallback { position: absolute; inset: 0; background: linear-gradient(155deg, var(--u-color, var(--color-fuchsia)) 0%, #141314 80%); }
+.univers-hero-fallback::before { content: ""; position: absolute; inset: 0; opacity: .45; background-image: repeating-linear-gradient(115deg, rgba(255,255,255,.06) 0 2px, transparent 2px 40px); }
+.univers-hero-scrim { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,.82) 0%, rgba(0,0,0,.1) 60%, transparent 100%); }
+.univers-hero-body { position: relative; z-index: 1; max-width: 760px; }
+.univers-hero h1 { font-family: var(--font-display), sans-serif; font-weight: 800; letter-spacing: -.035em; font-size: clamp(32px,5.6vw,64px); line-height: 1.04; margin: 10px 0 14px; color: #fff; }
+.univers-hero .lede { font-size: clamp(14px,1.6vw,18px); color: rgba(255,255,255,.88); max-width: 56ch; line-height: 1.65; }
+
+.univers-credit { position: absolute; right: 14px; bottom: 10px; z-index: 1; font-size: 9.5px; color: rgba(255,255,255,.55); }
+
 /* ---------- Chips / avatars ---------- */
 .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--color-fuchsia-soft); color: var(--color-attention); display: grid; place-items: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
 
@@ -317,22 +373,45 @@ tbody tr:hover { background: #fbf9f8; }
   .timeline-aside > * { flex: 1 1 220px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .dashboard-columns, .two-col, .detail-grid { grid-template-columns: 1fr; }
+  .gate-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .gate-grid { grid-template-columns: 1fr; }
+  .gate-panel { min-height: 260px; }
+  .gate-panel-fallback::after { font-size: 8rem; }
+  .editorial-hero { padding: 40px 18px 48px; }
+  .univers-hero { min-height: 56vh; padding: 26px 18px 32px; align-items: flex-end; }
 }
 @media (max-width: 800px) {
   .app-shell { position: relative; }
   .sidebar { position: fixed; transform: translateX(-101%); transition: transform .2s; width: 270px; }
   .sidebar.sidebar-open { transform: translateX(0); }
   .sidebar-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 25; }
-  .mobile-menu-btn { display: grid; place-items: center; border: 0; background: none; padding: 8px; color: var(--color-ink); }
+  .mobile-menu-btn { display: grid; place-items: center; border: 0; background: none; padding: 8px; color: var(--color-ink); min-height: 44px; min-width: 44px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .stat { padding: 14px; min-height: 96px; }
   .stat strong { font-size: 22px; }
   .hero-stats { grid-template-columns: repeat(2, 1fr); }
   .form-two, .form-three { grid-template-columns: 1fr; }
-  .timeline-row { grid-template-columns: 50px 20px minmax(0,1fr); }
-  .timeline-line { left: 58px; }
-  .timeline-phase { padding-left: 58px; }
+  /* Timeline : colonne date élargie (13/09, 27 sept. ne tiennent pas sur
+     50px) + police réduite pour éviter un empilement à 3 lignes. */
+  .timeline-row { grid-template-columns: 56px 18px minmax(0,1fr); column-gap: 4px; }
+  .timeline-time { font-size: 11.5px; }
+  .timeline-time small { font-size: 9px; }
+  .timeline-line { left: 62px; }
+  .timeline-phase { padding-left: 62px; }
   .page-title .btn { margin-top: 12px; }
   .steps-strip { overflow-x: auto; display: flex; }
   .step { min-width: 84px; }
+  /* Modales : moins de marge interne pour laisser respirer le contenu
+     sur les écrans étroits (320–430px). */
+  .modal-head, .modal-body { padding: 16px 16px; }
+  .modal-head h2 { font-size: 17px; }
+  /* Cibles tactiles : tous les boutons pilule/chip/filtre de
+     l'application partagent ce motif (rounded-full + padding réduit) —
+     une seule règle relève leur hauteur au lieu de dupliquer le
+     correctif dans chaque page. */
+  button[class*="rounded-full"], .chip, .filter-bar button { min-height: 38px; }
+  .icon-button { min-height: 40px; min-width: 40px; }
+  .tabs button { min-height: 44px; }
 }

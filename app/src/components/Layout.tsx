@@ -47,6 +47,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
+        <Link to="/decouvrir" className="sidebar-discover no-print">
+          <Sparkles className="h-3.5 w-3.5" /> Découvrir PACTE
+        </Link>
+
         <p className="sidebar-label">Naviguer</p>
         <nav className="side-nav">
           {LIENS.map((l) => (
@@ -84,11 +88,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <p className="breadcrumb">{titreCourant}</p>
           </div>
           <div className="top-right">
-            <Link to="/nouveau?mode=situation" className="btn btn-outline btn-sm">
-              <Sparkles className="h-4 w-4" /> Signaler une situation
+            <Link to="/nouveau?mode=situation" className="btn btn-outline btn-sm" title="Signaler une situation" aria-label="Signaler une situation">
+              <Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">Signaler une situation</span>
             </Link>
-            <Link to="/nouveau" className="btn btn-pink btn-sm">
-              <Plus className="h-4 w-4" /> Nouveau pacte
+            <Link to="/nouveau" className="btn btn-pink btn-sm" title="Nouveau pacte" aria-label="Nouveau pacte">
+              <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nouveau pacte</span>
             </Link>
           </div>
         </header>

@@ -167,7 +167,8 @@ export default function OngletDossier({ contrat, liens, clauses, engagements, ec
           {sections.engagements && (
             <DocSection icon={<ListChecks className="h-4 w-4" />} titre={`4. Engagements suivis (${engagements.length})`}>
               {engagements.length === 0 ? <p className="text-sm text-faint">Aucun engagement.</p> : (
-                <table className="w-full text-left text-xs sm:text-sm">
+                <div className="-mx-1 overflow-x-auto px-1">
+                <table className="w-full min-w-[560px] text-left text-xs sm:text-sm">
                   <thead><tr className="border-b-2 border-line text-left text-xs uppercase text-faint">
                     <th className="py-2 pr-3">Engagement</th><th className="py-2 pr-3">Qui → Pour qui</th><th className="py-2 pr-3">Quand</th><th className="py-2">Statut</th>
                   </tr></thead>
@@ -182,6 +183,7 @@ export default function OngletDossier({ contrat, liens, clauses, engagements, ec
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </DocSection>
           )}
@@ -189,7 +191,8 @@ export default function OngletDossier({ contrat, liens, clauses, engagements, ec
           {sections.echeances && (
             <DocSection icon={<CalendarClock className="h-4 w-4" />} titre={`5. Échéances (${echeances.length})`}>
               {echeances.length === 0 ? <p className="text-sm text-faint">Aucune échéance.</p> : (
-                <table className="w-full text-left text-sm">
+                <div className="-mx-1 overflow-x-auto px-1">
+                <table className="w-full min-w-[520px] text-left text-sm">
                   <thead><tr className="border-b-2 border-line text-xs uppercase text-faint">
                     <th className="py-2 pr-3">Échéance</th><th className="py-2 pr-3">Type</th><th className="py-2 pr-3">Date limite</th><th className="py-2 pr-3">Montant</th><th className="py-2">Statut</th>
                   </tr></thead>
@@ -205,6 +208,7 @@ export default function OngletDossier({ contrat, liens, clauses, engagements, ec
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </DocSection>
           )}
@@ -265,7 +269,8 @@ export default function OngletDossier({ contrat, liens, clauses, engagements, ec
           {sections.preuves && (
             <DocSection icon={<FileCheck2 className="h-4 w-4" />} titre={`8. Chaîne documentaire (${preuves.length} pièces)`}>
               {preuves.length === 0 ? <p className="text-sm text-faint">Aucune pièce versée.</p> : (
-                <table className="w-full text-left text-sm">
+                <div className="-mx-1 overflow-x-auto px-1">
+                <table className="w-full min-w-[520px] text-left text-sm">
                   <thead><tr className="border-b-2 border-line text-xs uppercase text-faint">
                     <th className="py-2 pr-3">#</th><th className="py-2 pr-3">Pièce</th><th className="py-2 pr-3">Type</th><th className="py-2 pr-3">Date</th><th className="py-2">Empreinte</th>
                   </tr></thead>
@@ -276,11 +281,12 @@ export default function OngletDossier({ contrat, liens, clauses, engagements, ec
                         <td className="py-2 pr-3 font-medium">{p.titre}</td>
                         <td className="py-2 pr-3">{typePreuveLabel(p.type)}</td>
                         <td className="py-2 pr-3">{fmtDate(p.date_preuve || p.created_at)}</td>
-                        <td className="py-2 font-mono text-xs">{p.empreinte || '—'}</td>
+                        <td className="py-2 font-mono text-xs break-all">{p.empreinte || '—'}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </DocSection>
           )}
