@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, FileText, AlertTriangle, CalendarClock, Plus,
-  ArrowRight, ShieldAlert, BadgeCheck, Activity, Scale, Sparkles, Globe2,
+  FileText, AlertTriangle, CalendarClock, Plus,
+  ArrowRight, ShieldAlert, BadgeCheck, Activity, Scale, Globe2,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Contrat, Echeance, Alerte, Evenement, Objet } from '../lib/types';
 import { fmtDate, fmtMontant, joursRestants, delaiHumain } from '../lib/format';
 import { Spinner, BadgeSante, BadgeStatut, Prudence, SectionTitre, Btn } from '../components/ui';
+import PacteHeroConversationnel from '../components/hero/PacteHeroConversationnel';
 
 export default function Dashboard() {
   const [contrats, setContrats] = useState<Contrat[]>([]);
@@ -78,27 +79,26 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Héro */}
-      <div className="hero-band">
-        <p className="eyebrow" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <LayoutDashboard className="h-4 w-4" /> Centre de pilotage
-        </p>
-        <h1>Chaque pacte est un <em>organisme vivant</em>.</h1>
-        <p>
-          CONTRAT → PARTIES → ENGAGEMENTS → CONDITIONS → ÉVÉNEMENTS → ÉCHÉANCES → PREUVES → ALERTES →
-          ACTIONS → HISTORIQUE → DOSSIER. Le même moteur relie aussi vos projets, œuvres, actifs et carrières —
-          quel que soit l'univers, ce qui a été promis, ce qui se passe et ce qui reste à prouver reste traçable.
-        </p>
-        <div className="hero-actions">
-          <Link to="/nouveau"><Btn><Plus className="h-4 w-4" /> Nouveau pacte</Btn></Link>
-          <Link to="/nouveau?mode=situation"><Btn variant="soft"><Sparkles className="h-4 w-4" /> Il vient de se passer quelque chose</Btn></Link>
-          <Link to="/univers"><Btn variant="ghost"><Globe2 className="h-4 w-4" /> Explorer les univers</Btn></Link>
+      {/* Héro conversationnel — porte d'entrée unique de PACTE.
+          Remplace l'ancien hero-band (bandeau sombre + « Nouveau pacte »
+          et « Signaler une situation ») : les deux boutons ouvraient le
+          même écran (/nouveau), ils deviennent redondants dès lors que
+          le champ conversationnel comprend l'intention à partir du
+          texte. Le chemin pas-à-pas reste disponible (lien discret
+          ci-dessous), rien n'a été supprimé. */}
+      <PacteHeroConversationnel />
+
+      <div className="pacte-hero-pied">
+        <div className="pacte-hero-stats">
+          <StatClaire chiffre={String(stats.total)} label="Contrats" />
+          <StatClaire chiffre={String(objets.length)} label="Objets suivis" />
+          <StatClaire chiffre={String(stats.attention)} label="À surveiller" accent="attention" />
+          <StatClaire chiffre={String(stats.critiques)} label="Critiques" accent="critique" />
         </div>
-        <div className="hero-stats">
-          <Stat chiffre={String(stats.total)} label="Contrats" />
-          <Stat chiffre={String(objets.length)} label="Objets suivis" />
-          <Stat chiffre={String(stats.attention)} label="À surveiller" accent="attention" />
-          <Stat chiffre={String(stats.critiques)} label="Critiques" accent="critique" />
+        <div className="pacte-hero-liens">
+          <Link to="/nouveau">Créer pas à pas, étape par étape</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/univers"><Globe2 className="h-3.5 w-3.5" /> Explorer les univers</Link>
         </div>
       </div>
 
@@ -219,10 +219,10 @@ export default function Dashboard() {
   );
 }
 
-function Stat({ chiffre, label, accent }: { chiffre: string; label: string; accent?: 'success' | 'attention' | 'critique' }) {
-  const color = accent === 'success' ? '#5fd6a4' : accent === 'attention' ? '#f7a9cf' : accent === 'critique' ? '#ff8fa8' : '#fff';
+function StatClaire({ chiffre, label, accent }: { chiffre: string; label: string; accent?: 'success' | 'attention' | 'critique' }) {
+  const color = accent === 'attention' ? 'var(--color-attention)' : accent === 'critique' ? 'var(--color-critique)' : 'var(--n-graphite)';
   return (
-    <div className="hero-stat">
+    <div className="pacte-hero-stat">
       <strong style={{ color }}>{chiffre}</strong>
       <small>{label}</small>
     </div>

@@ -134,10 +134,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <button className="mobile-menu-btn" onClick={() => setOuvert(true)} aria-label="Ouvrir le menu"><Menu className="h-5 w-5" /></button>
               <p className="breadcrumb">{titreCourant}</p>
             </div>
+            {/* « Signaler une situation » retiré : même écran (/nouveau) que
+                « Nouveau pacte » — deux entrées concurrentes vers le même
+                workflow (audit du 27/09). L'entrée conversationnelle du
+                Dashboard comprend désormais l'intention (créer / signaler)
+                à partir du texte ; ce bouton reste le raccourci manuel
+                unique, toujours disponible, jamais supprimé. */}
             <div className="top-right">
-              <Link to="/nouveau?mode=situation" className="btn btn-outline btn-sm" title="Signaler une situation" aria-label="Signaler une situation">
-                <Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">Signaler une situation</span>
-              </Link>
               <Link to="/nouveau" className="btn btn-pink btn-sm" title="Nouveau pacte" aria-label="Nouveau pacte">
                 <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nouveau pacte</span>
               </Link>
