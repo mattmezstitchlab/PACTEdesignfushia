@@ -78,7 +78,7 @@ export async function logAction(
       details: details || null,
     });
   } catch (e) {
-    console.warn('[contractos] historique non enregistré:', e);
+    console.warn('[pacte] historique non enregistré:', e);
   }
 }
 

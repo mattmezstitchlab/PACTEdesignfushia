@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, FileCheck2, Upload, ExternalLink, Link2 } from 'lucide-react';
+import { Plus, Trash2, FileCheck2, Upload, ExternalLink } from 'lucide-react';
 import { api, logAction, fichierVersBase64 } from '../../lib/api';
 import type { Engagement, Evenement, Preuve } from '../../lib/types';
 import { TYPES_PREUVE } from '../../lib/types';
@@ -124,7 +124,7 @@ export default function OngletPreuves({ contratId, preuves, engagements, eveneme
       )}
 
       {modal && (
-        <Modal titre="Verser une preuve" sousTitre="Horodatage + empreinte automatiques. 6 Mo max par fichier." onClose={() => setModal(false)}>
+        <Modal titre="Verser une preuve" sousTitre="Horodatage + empreinte automatiques. 8 Mo max par fichier." onClose={() => setModal(false)}>
           <div className="space-y-4">
             <Field label="Titre *"><input value={form.titre || ''} onChange={(e) => setForm({ ...form, titre: e.target.value })} placeholder="Ex. : Reçu du 2ᵉ versement — 500 €" className={inputCls} /></Field>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -169,4 +169,3 @@ export default function OngletPreuves({ contratId, preuves, engagements, eveneme
   );
 }
 
-export function RefLink() { void Link2; return null; }

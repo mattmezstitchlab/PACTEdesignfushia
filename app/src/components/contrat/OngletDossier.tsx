@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
 import { FolderOpen, Printer, FileText, ListChecks, Users, CalendarClock, History, FileCheck2, Scale, Download } from 'lucide-react';
-import type { Clause, Contrat, ContratPartie, Echeance, Engagement, Evenement, Preuve, Version } from '../../lib/types';
+import type { Alerte, Clause, Contrat, ContratPartie, Echeance, Engagement, Evenement, Preuve, Version } from '../../lib/types';
 import { fmtDate, fmtDateLong, fmtMontant, typeEvenementLabel, typePreuveLabel } from '../../lib/format';
-import { api, logAction } from '../../lib/api';
+import { logAction } from '../../lib/api';
 import { Btn, Prudence, useToast } from '../ui';
 
 // Dossier final : le document généré est une REPRÉSENTATION LISIBLE des
 // données structurées — jamais l'unique source de vérité. Impression / PDF
 // via le navigateur, sommaire complet, mentions de prudence.
-export default function OngletDossier({ contrat, liens, clauses, engagements, echeances, evenements, preuves, versions }: {
+export default function OngletDossier({ contrat, liens, clauses, engagements, echeances, evenements, preuves, versions, alertes }: {
   contrat: Contrat;
   liens: ContratPartie[];
   clauses: Clause[];
@@ -17,12 +17,22 @@ export default function OngletDossier({ contrat, liens, clauses, engagements, ec
   evenements: Evenement[];
   preuves: Preuve[];
   versions: Version[];
+  alertes: Alerte[];
 }) {
   const { toastEl, ok } = useToast();
   const [sections, setSections] = useState<Record<string, boolean>>({
     identite: true, parties: true, clauses: true, engagements: true,
-    echeances: true, evenements: true, preuves: true, signatures: true, versions: true,
+    echeances: true, evenements: true, contestes: true, preuves: true, signatures: true, versions: true,
   });
+
+  const evenementsContestes = useMemo(
+    () => evenements.filter((e) => e.statut === 'a_verifier' || e.statut === 'conteste'),
+    [evenements],
+  );
+  const alertesNonResolues = useMemo(
+    () => alertes.filter((a) => a.statut === 'active' || a.statut === 'reconnue'),
+    [alertes],
+  );
 
   const toggle = (k: string) => setSections((s) => ({ ...s, [k]: !s[k] }));
 
@@ -51,10 +61,9 @@ export default function OngletDossier({ contrat, liens, clauses, engagements, ec
     const blob = new Blob([JSON.stringify(dossier, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `contractos-dossier-${contrat.id}.json`;
+    a.download = `pacte-dossier-${contrat.id}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
-    void api;
   };
 
   const nomPartie = (id: number | null) => liens.find((l) => l.partie_id === id)?.partie?.nom || '—';
@@ -77,7 +86,7 @@ export default function OngletDossier({ contrat, liens, clauses, engagements, ec
         {[
           ['identite', 'Identité'], ['parties', 'Parties'], ['clauses', 'Clauses'],
           ['engagements', 'Engagements'], ['echeances', 'Échéances'], ['evenements', 'Événements'],
-          ['preuves', 'Preuves'], ['signatures', 'Signatures'], ['versions', 'Versions'],
+          ['contestes', 'Points à vérifier / contestés'], ['preuves', 'Preuves'], ['signatures', 'Signatures'], ['versions', 'Versions'],
         ].map(([k, l]) => (
           <button key={k} onClick={() => toggle(k)} className={`cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-medium transition ${sections[k] ? 'bg-fuchsia text-white' : 'bg-white text-faint'}`}>
             {l}
@@ -86,14 +95,14 @@ export default function OngletDossier({ contrat, liens, clauses, engagements, ec
       </div>
 
       {/* ============ DOCUMENT IMPRIMABLE ============ */}
-      <div className="print-bg-white overflow-hidden rounded border border-line bg-white text-ink shadow-2xl">
-        <div className="bg-ink px-6 py-8 text-ink sm:px-10 print-bg-white print-text-ink">
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-fuchsia print-text-ink">PACTE — Dossier final</p>
-          <h1 className="font-display mt-2 text-2xl font-bold sm:text-3xl print-text-ink">{contrat.titre}</h1>
-          <p className="mt-2 text-sm text-muted print-text-ink">
+      <div className="overflow-hidden rounded border border-line bg-white text-ink shadow-2xl">
+        <div className="dossier-head px-6 py-8 sm:px-10">
+          <p className="text-xs font-bold uppercase tracking-[0.25em]" style={{ color: '#f2a9c9' }}>PACTE — Dossier final</p>
+          <h1 className="font-display mt-2 text-2xl font-bold sm:text-3xl">{contrat.titre}</h1>
+          <p className="mt-2 text-sm" style={{ opacity: .75 }}>
             {contrat.domaine || 'Accord'} · v{contrat.version_courante || 1} · Généré le {fmtDateLong(new Date().toISOString())}
           </p>
-          <p className="mt-3 max-w-3xl rounded-sm bg-white p-3 text-xs leading-relaxed text-muted print-text-ink">
+          <p className="dossier-head-note mt-3 max-w-3xl rounded-sm p-3 text-xs leading-relaxed">
             Ce document est une représentation lisible, générée automatiquement à partir des données structurées du dossier PACTE.
             En cas de divergence, les données horodatées et les pièces versées priment. Document informatif : il ne constitue pas un avis juridique.
           </p>
@@ -215,8 +224,46 @@ export default function OngletDossier({ contrat, liens, clauses, engagements, ec
             </DocSection>
           )}
 
+          {sections.contestes && (
+            <DocSection icon={<Scale className="h-4 w-4" />} titre={`7. Points à vérifier / contestés (${evenementsContestes.length + alertesNonResolues.length})`}>
+              {evenementsContestes.length === 0 && alertesNonResolues.length === 0 ? (
+                <p className="text-sm text-faint">Aucun point contesté ni signalement non résolu à ce jour — cette section évoluera avec le dossier.</p>
+              ) : (
+                <div className="space-y-3">
+                  {evenementsContestes.length > 0 && (
+                    <div>
+                      <p className="mb-1.5 text-xs font-bold uppercase tracking-widest text-faint">Événements déclarés « à vérifier » ou « contestés »</p>
+                      <ul className="space-y-1.5 text-sm">
+                        {evenementsContestes.map((ev) => (
+                          <li key={ev.id} className="rounded-sm bg-ivoire p-3">
+                            <strong>{typeEvenementLabel(ev.type)}</strong> — {ev.titre} <span className="text-faint">({fmtDate(ev.date_evenement || ev.created_at, true)}{ev.auteur ? ` · déclaré par ${ev.auteur}` : ''} · statut : {ev.statut === 'conteste' ? 'contesté' : 'à vérifier'})</span>
+                            {ev.description && <p className="mt-0.5 text-faint">{ev.description}</p>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {alertesNonResolues.length > 0 && (
+                    <div>
+                      <p className="mb-1.5 text-xs font-bold uppercase tracking-widest text-faint">Signalements du moteur de cohérence non résolus</p>
+                      <ul className="space-y-1.5 text-sm">
+                        {alertesNonResolues.map((a) => (
+                          <li key={a.id} className="rounded-sm bg-ivoire p-3">
+                            <strong>{a.titre}</strong> <span className="text-faint">({a.gravite === 'critique' ? 'critique' : a.gravite === 'attention' ? 'à surveiller' : 'information'})</span>
+                            {a.message && <p className="mt-0.5 text-faint">{a.message}</p>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <p className="text-xs italic text-faint">Ces éléments sont des déclarations ou des signalements à vérifier — ils ne constituent ni une faute établie, ni une conclusion juridique.</p>
+                </div>
+              )}
+            </DocSection>
+          )}
+
           {sections.preuves && (
-            <DocSection icon={<FileCheck2 className="h-4 w-4" />} titre={`7. Chaîne documentaire (${preuves.length} pièces)`}>
+            <DocSection icon={<FileCheck2 className="h-4 w-4" />} titre={`8. Chaîne documentaire (${preuves.length} pièces)`}>
               {preuves.length === 0 ? <p className="text-sm text-faint">Aucune pièce versée.</p> : (
                 <table className="w-full text-left text-sm">
                   <thead><tr className="border-b-2 border-line text-xs uppercase text-faint">
@@ -239,7 +286,7 @@ export default function OngletDossier({ contrat, liens, clauses, engagements, ec
           )}
 
           {sections.signatures && (
-            <DocSection icon={<Scale className="h-4 w-4" />} titre="8. Signatures">
+            <DocSection icon={<Scale className="h-4 w-4" />} titre="9. Signatures">
               <div className="grid gap-4 sm:grid-cols-2">
                 {liens.map((l) => (
                   <div key={l.id} className="rounded-sm border border-line p-4">
@@ -255,7 +302,7 @@ export default function OngletDossier({ contrat, liens, clauses, engagements, ec
           )}
 
           {sections.versions && versions.length > 0 && (
-            <DocSection icon={<FolderOpen className="h-4 w-4" />} titre={`9. Versions conservées (${versions.length})`}>
+            <DocSection icon={<FolderOpen className="h-4 w-4" />} titre={`10. Versions conservées (${versions.length})`}>
               <ul className="space-y-1.5 text-sm">
                 {[...versions].sort((a, b) => (a.numero || 0) - (b.numero || 0)).map((v) => (
                   <li key={v.id} className="rounded-sm bg-ivoire px-3 py-2">

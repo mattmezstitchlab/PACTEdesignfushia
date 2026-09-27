@@ -236,7 +236,7 @@ export function moteurCoherence(d: DonneesCoherence): AlerteCalculee[] {
   // Paiements sans reçu
   const paiements = evenements.filter((ev) => ev.type === 'paiement');
   for (const p of paiements) {
-    const aPiece = (p.pieces && p.pieces.length > 0) || preuves.some((pr) => pr.evenement_id === p.id);
+    const aPiece = preuves.some((pr) => pr.evenement_id === p.id);
     if (!aPiece) {
       alertes.push(R('RECU_MANQUANT', 'attention',
         `Paiement sans justificatif : « ${p.titre || 'paiement'} »`,

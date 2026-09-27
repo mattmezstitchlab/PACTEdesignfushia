@@ -12,7 +12,7 @@ import { Spinner, BadgeSante, BadgeStatut, Btn, Field, Modal, inputCls, useToast
 import { useContratData } from '../components/contrat/data';
 import OngletParties from '../components/contrat/OngletParties';
 import OngletClauses from '../components/contrat/OngletClauses';
-import OngletEngagements from '../components/contrat/OngletEngagements';
+import OngletEngagements, { statutLabel as statutEngagementLabel } from '../components/contrat/OngletEngagements';
 import OngletEvenements from '../components/contrat/OngletEvenements';
 import OngletEcheances from '../components/contrat/OngletEcheances';
 import OngletPreuves from '../components/contrat/OngletPreuves';
@@ -21,6 +21,11 @@ import OngletScenarios from '../components/contrat/OngletScenarios';
 import OngletActions from '../components/contrat/OngletActions';
 import OngletVersions from '../components/contrat/OngletVersions';
 import OngletDossier from '../components/contrat/OngletDossier';
+
+type ItemTimeline = {
+  date: string; type: 'engagement' | 'echeance' | 'evenement'; titre: string; detail: string;
+  onglet: string; etat: 'fait' | 'attention' | 'critique'; nbPreuves: number;
+};
 
 const ONGLETS = [
   { id: 'apercu', label: 'Aperçu', icon: Info },
@@ -66,20 +71,55 @@ export default function FicheContrat() {
   }, [contrat?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const timeline = useMemo(() => {
-    const items: { date: string; type: string; titre: string; detail: string }[] = [];
+    const items: ItemTimeline[] = [];
     for (const g of d.engagements) {
       if (!g.date_echeance) continue;
-      items.push({ date: g.date_echeance, type: 'engagement', titre: g.titre, detail: g.statut || '' });
+      const enRetard = g.statut !== 'realise' && g.statut !== 'annule' && new Date(g.date_echeance).getTime() < Date.now();
+      items.push({
+        date: g.date_echeance, type: 'engagement', titre: g.titre, detail: statutEngagementLabel(g.statut),
+        onglet: 'engagements',
+        etat: g.statut === 'realise' ? 'fait' : enRetard ? 'critique' : 'attention',
+        nbPreuves: d.preuves.filter((p) => p.engagement_id === g.id).length,
+      });
     }
     for (const e of d.echeances) {
       if (!e.date_limite) continue;
-      items.push({ date: e.date_limite, type: 'echeance', titre: e.titre || 'Échéance', detail: `${e.type || ''}${e.montant ? ` · ${e.montant}` : ''}` });
+      const enRetard = e.statut !== 'realisee' && e.statut !== 'annulee' && new Date(e.date_limite).getTime() < Date.now();
+      items.push({
+        date: e.date_limite, type: 'echeance', titre: e.titre || 'Échéance', detail: `${e.type || ''}${e.montant ? ` · ${e.montant} ${e.devise || ''}` : ''}`,
+        onglet: 'echeances',
+        etat: e.statut === 'realisee' ? 'fait' : enRetard ? 'critique' : 'attention',
+        nbPreuves: 0,
+      });
     }
     for (const ev of d.evenements) {
-      items.push({ date: ev.date_evenement || ev.created_at, type: 'evenement', titre: ev.titre || 'Événement', detail: ev.type || '' });
+      const sensible = ['incident', 'impossibilite', 'force_majeure', 'refus'].includes(ev.type || '');
+      items.push({
+        date: ev.date_evenement || ev.created_at, type: 'evenement', titre: ev.titre || 'Événement', detail: ev.type || '',
+        onglet: 'evenements',
+        etat: ev.statut === 'conteste' || sensible ? 'critique' : ev.statut === 'a_verifier' ? 'attention' : 'fait',
+        nbPreuves: d.preuves.filter((p) => p.evenement_id === ev.id).length,
+      });
     }
     return items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [d.engagements, d.echeances, d.evenements]);
+  }, [d.engagements, d.echeances, d.evenements, d.preuves]);
+
+  // AVANT (avant le début du contrat) / PENDANT (vie du contrat) / APRÈS
+  // (après son terme) — la Timeline reste le fil conducteur du contrat.
+  const phases = useMemo(() => {
+    const debut = contrat?.date_debut ? new Date(contrat.date_debut).getTime() : null;
+    const fin = contrat?.date_fin ? new Date(contrat.date_fin).getTime() : null;
+    const avant: ItemTimeline[] = [];
+    const pendant: ItemTimeline[] = [];
+    const apres: ItemTimeline[] = [];
+    for (const it of timeline) {
+      const t = new Date(it.date).getTime();
+      if (debut !== null && t < debut) avant.push(it);
+      else if (fin !== null && t > fin) apres.push(it);
+      else pendant.push(it);
+    }
+    return { avant, pendant, apres };
+  }, [timeline, contrat?.date_debut, contrat?.date_fin]);
 
   if (d.loading) return <Spinner label="Ouverture du contrat…" />;
   if (d.erreur || !contrat) {
@@ -174,10 +214,10 @@ export default function FicheContrat() {
 
       {/* Contenu */}
       {onglet === 'apercu' && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-5">
           <div className="card p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-ink"><FileText className="h-5 w-5 text-fuchsia" /> État du dossier</h2>
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
               <MiniStat n={d.contratParties.length} l="Parties" o="parties" go={changerOnglet} />
               <MiniStat n={d.clauses.length} l="Clauses" o="clauses" go={changerOnglet} />
               <MiniStat n={d.engagements.length} l="Engagements" o="engagements" go={changerOnglet} />
@@ -185,7 +225,7 @@ export default function FicheContrat() {
               <MiniStat n={d.echeances.length} l="Échéances" o="echeances" go={changerOnglet} />
               <MiniStat n={d.preuves.length} l="Preuves" o="preuves" go={changerOnglet} />
             </div>
-            <div className="mt-4 space-y-2 text-sm">
+            <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
               <LigneEtat label="Signatures" valeur={`${d.contratParties.filter((p) => p.signature_statut === 'signee').length}/${d.contratParties.length} recueillies`} alerte={d.contratParties.some((p) => p.signature_statut !== 'signee')} />
               <LigneEtat label="Engagements réalisés" valeur={`${d.engagements.filter((g) => g.statut === 'realise').length}/${d.engagements.length}`} />
               <LigneEtat label="Alertes actives" valeur={String(alertesActives)} alerte={alertesActives > 0} />
@@ -197,29 +237,55 @@ export default function FicheContrat() {
               </p>
             )}
           </div>
+
           <div className="card p-5">
-            <h2 className="mb-3 font-display text-lg font-semibold text-ink">Timeline — engagements, échéances, événements</h2>
+            <h2 className="mb-1 font-display text-lg font-semibold text-ink">Timeline — avant, pendant, après</h2>
+            <p className="mb-4 text-sm text-muted">Le fil conducteur du contrat : chaque étape est reliée à ses engagements, échéances et preuves quand ces liens existent.</p>
             {timeline.length === 0 ? (
-              <p className="text-sm text-muted">La timeline se remplira avec les dates des engagements, échéances et événements.</p>
+              <p className="empty p-6 text-center text-sm text-muted">La timeline se remplira avec les dates des engagements, échéances et événements.</p>
             ) : (
-              <ol className="relative max-h-[420px] space-y-0 overflow-y-auto border-l-2 border-line pl-4">
-                {timeline.slice(0, 60).map((t, i) => (
-                  <li key={i} className="relative py-2">
-                    <span className={`absolute -left-[23px] top-3 h-2.5 w-2.5 rounded-full ${t.type === 'engagement' ? 'bg-fuchsia' : t.type === 'echeance' ? 'bg-fuchsia' : 'bg-success'}`} />
-                    <p className="text-xs text-faint">{fmtDate(t.date)} · {t.type === 'engagement' ? 'Engagement' : t.type === 'echeance' ? 'Échéance' : 'Événement'}</p>
-                    <p className="truncate text-sm font-medium text-ink">{t.titre}</p>
-                    {t.detail && <p className="truncate text-xs text-faint">{t.detail}</p>}
-                  </li>
-                ))}
-              </ol>
+              <div className="timeline-layout">
+                <div className="timeline">
+                  <PhaseTimeline label="Avant — création, négociation, signature" items={phases.avant} vide="Aucun élément daté avant le début du contrat." changerOnglet={changerOnglet} />
+                  <PhaseTimeline label="Pendant — vie du contrat" items={phases.pendant} vide="Aucun élément daté sur la période du contrat pour l’instant." changerOnglet={changerOnglet} />
+                  <PhaseTimeline label="Après — exécution, clôture, différend" items={phases.apres} vide="Rien après le terme du contrat pour l’instant." changerOnglet={changerOnglet} />
+                </div>
+                <aside className="timeline-aside">
+                  <div className="card p-3.5">
+                    <p className="text-xs font-bold uppercase tracking-widest text-faint">Répartition</p>
+                    <p className="mt-1.5 text-sm text-muted">Avant : <strong className="text-ink">{phases.avant.length}</strong></p>
+                    <p className="text-sm text-muted">Pendant : <strong className="text-ink">{phases.pendant.length}</strong></p>
+                    <p className="text-sm text-muted">Après : <strong className="text-ink">{phases.apres.length}</strong></p>
+                  </div>
+                  <div className="card p-3.5">
+                    <p className="text-xs font-bold uppercase tracking-widest text-faint">Voir en détail</p>
+                    <div className="mt-2 flex flex-col gap-1.5 text-sm">
+                      <button onClick={() => changerOnglet('engagements')} className="cursor-pointer text-left text-fuchsia hover:underline">Tous les engagements</button>
+                      <button onClick={() => changerOnglet('evenements')} className="cursor-pointer text-left text-fuchsia hover:underline">Journal des événements</button>
+                      <button onClick={() => changerOnglet('preuves')} className="cursor-pointer text-left text-fuchsia hover:underline">Chaîne de preuves</button>
+                    </div>
+                  </div>
+                </aside>
+              </div>
             )}
           </div>
         </div>
       )}
       {onglet === 'parties' && <OngletParties contratId={contrat.id} liens={d.contratParties} annuaire={d.parties} onChange={() => d.rechargerTable('parties')} />}
       {onglet === 'clauses' && <OngletClauses contratId={contrat.id} clauses={d.clauses} onChange={() => d.rechargerTable('clauses')} />}
-      {onglet === 'engagements' && <OngletEngagements contratId={contrat.id} engagements={d.engagements} liens={d.contratParties} onChange={() => d.rechargerTable('engagements')} />}
-      {onglet === 'evenements' && <OngletEvenements contratId={contrat.id} evenements={d.evenements} engagements={d.engagements} onChange={() => d.rechargerTable('evenements')} />}
+      {onglet === 'engagements' && (
+        <OngletEngagements
+          contratId={contrat.id} engagements={d.engagements} liens={d.contratParties}
+          echeances={d.echeances} evenements={d.evenements} preuves={d.preuves}
+          onChange={() => {
+            d.rechargerTable('engagements');
+            d.rechargerTable('echeances');
+            d.rechargerTable('evenements');
+            d.rechargerTable('preuves');
+          }}
+        />
+      )}
+      {onglet === 'evenements' && <OngletEvenements contratId={contrat.id} evenements={d.evenements} engagements={d.engagements} preuves={d.preuves} onChange={() => d.rechargerTable('evenements')} />}
       {onglet === 'echeances' && <OngletEcheances contratId={contrat.id} echeances={d.echeances} engagements={d.engagements} devise={contrat.devise} onChange={() => d.rechargerTable('echeances')} />}
       {onglet === 'preuves' && <OngletPreuves contratId={contrat.id} preuves={d.preuves} engagements={d.engagements} evenements={d.evenements} onChange={() => d.rechargerTable('preuves')} />}
       {onglet === 'alertes' && (
@@ -245,7 +311,7 @@ export default function FicheContrat() {
           onChange={() => { d.rechargerTable('versions'); d.rechargerTable('contrat'); d.rechargerTable('historique'); }} />
       )}
       {onglet === 'dossier' && (
-        <OngletDossier contrat={contrat} liens={d.contratParties} clauses={d.clauses} engagements={d.engagements} echeances={d.echeances} evenements={d.evenements} preuves={d.preuves} versions={d.versions} />
+        <OngletDossier contrat={contrat} liens={d.contratParties} clauses={d.clauses} engagements={d.engagements} echeances={d.echeances} evenements={d.evenements} preuves={d.preuves} versions={d.versions} alertes={d.alertes} />
       )}
 
       {/* Modal infos */}
@@ -302,5 +368,49 @@ function LigneEtat({ label, valeur, alerte }: { label: string; valeur: string; a
       <span className="text-muted">{label}</span>
       <strong className={alerte ? 'text-fuchsia' : 'text-ink'}>{valeur}</strong>
     </div>
+  );
+}
+
+const TYPE_LABEL: Record<ItemTimeline['type'], string> = { engagement: 'Engagement', echeance: 'Échéance', evenement: 'Événement' };
+
+function jourMois(d: string): string {
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return '—';
+  return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(dt);
+}
+function annee(d: string): string {
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return '';
+  return new Intl.DateTimeFormat('fr-FR', { year: 'numeric' }).format(dt);
+}
+
+function PhaseTimeline({ label, items, vide, changerOnglet }: { label: string; items: ItemTimeline[]; vide: string; changerOnglet: (o: string) => void }) {
+  return (
+    <>
+      <p className="timeline-phase">{label}</p>
+      {items.length === 0 ? (
+        <p className="pb-4 pl-[78px] text-xs text-faint">{vide}</p>
+      ) : (
+        <div className="relative">
+          <span className="timeline-line" />
+          {items.map((it, i) => (
+            <div key={`${it.type}-${i}`} className="timeline-row">
+              <div className="timeline-time">{jourMois(it.date)}<small>{annee(it.date)}</small></div>
+              <span className={`timeline-node ${it.etat === 'fait' ? 'node-fait' : it.etat === 'critique' ? 'node-critique' : 'node-attention'}`} />
+              <div className="timeline-content">
+                <button onClick={() => changerOnglet(it.onglet)} className="timeline-card w-full cursor-pointer text-left">
+                  <div className="timeline-card-top">
+                    <h3 className="text-ink">{it.titre}</h3>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-faint">{TYPE_LABEL[it.type]}</span>
+                  </div>
+                  {it.detail && <p>{it.detail}</p>}
+                  {it.nbPreuves > 0 && <p className="mt-1 text-fuchsia">{it.nbPreuves} preuve(s) liée(s)</p>}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   );
 }

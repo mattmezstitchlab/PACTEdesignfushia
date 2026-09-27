@@ -77,7 +77,7 @@ export default function Modeles() {
                         ))}
                       </ul>
                       <div className="mt-3">
-                        <Btn onClick={() => nav('/nouveau')}><Plus className="h-4 w-4" /> Utiliser ce modèle</Btn>
+                        <Btn onClick={() => nav(`/nouveau?modele=${m.code}`)}><Plus className="h-4 w-4" /> Utiliser ce modèle</Btn>
                       </div>
                     </div>
                   </div>

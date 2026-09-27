@@ -20,19 +20,16 @@ export default function Dashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const [c, e, a, ev] = await Promise.all([
+        const [c, e, a, evs] = await Promise.all([
           api.contrats.list(),
           api.echeances.list(),
           api.alertes.list({ statut: 'active' }),
-          api.historique.list(),
+          api.evenements.list(),
         ]);
         setContrats(c);
         setEcheances(e);
         setAlertes(a);
-        // historieuqe utilisé comme activité récente via evenements
-        const evs = await api.evenements.list();
         setEvenements(evs.slice(0, 6));
-        void ev;
       } catch (err: any) {
         setErreur(err.message || 'Chargement impossible');
       } finally {

@@ -23,6 +23,7 @@ export default function OngletVersions({ contrat, versions, snapshot, historique
   const [compare, setCompare] = useState<Version | null>(null);
   const [titre, setTitre] = useState('');
   const [resume, setResume] = useState('');
+  const [brouillon, setBrouillon] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const numeroSuivant = useMemo(
@@ -43,17 +44,19 @@ export default function OngletVersions({ contrat, versions, snapshot, historique
         parties: snapshot.parties.map((p) => ({ nom: p.partie?.nom, role: p.role, signature: p.signature_statut })),
         compteurs: { evenements: snapshot.evenements.length, preuves: snapshot.preuves.length },
       };
+      const statutVersion = brouillon ? 'brouillon' : 'validee';
       const v = await api.versions.create({
         contrat_id: contrat.id, numero: numeroSuivant, titre: titre.trim(),
-        resume: resume || null, statut: 'validee', snapshot: snap,
+        resume: resume || null, statut: statutVersion, snapshot: snap,
       });
-      await api.contrats.update(contrat.id, { version_courante: numeroSuivant });
-      await logAction(contrat.id, 'version_figee', 'version', v.id, { numero: numeroSuivant, titre });
+      if (!brouillon) await api.contrats.update(contrat.id, { version_courante: numeroSuivant });
+      await logAction(contrat.id, 'version_figee', 'version', v.id, { numero: numeroSuivant, titre, statut: statutVersion });
       setModal(false);
       setTitre('');
       setResume('');
+      setBrouillon(false);
       onChange();
-      ok(`Version ${numeroSuivant} figée — l’historique reste intact.`);
+      ok(brouillon ? `Version ${numeroSuivant} enregistrée en brouillon — à valider avant qu’elle ne devienne la version courante.` : `Version ${numeroSuivant} figée — l’historique reste intact.`);
     } catch (e: any) { err(e.message); } finally { setBusy(false); }
   };
 
@@ -142,6 +145,10 @@ export default function OngletVersions({ contrat, versions, snapshot, historique
           <div className="space-y-4">
             <Field label="Titre de la version *"><input value={titre} onChange={(e) => setTitre(e.target.value)} placeholder={`Ex. : V${numeroSuivant} — avenant loyer signé`} className={inputCls} /></Field>
             <Field label="Résumé des changements"><textarea value={resume} onChange={(e) => setResume(e.target.value)} rows={3} placeholder="Ce qui change par rapport à la version précédente…" className={inputCls} /></Field>
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-sm border border-line bg-white p-3 text-sm text-muted">
+              <input type="checkbox" checked={brouillon} onChange={(e) => setBrouillon(e.target.checked)} className="mt-0.5 cursor-pointer" />
+              <span>Enregistrer comme <strong className="text-ink">brouillon</strong> — l’instantané est conservé mais ne devient pas la version courante tant qu’il n’est pas validé.</span>
+            </label>
             <div className="card p-3.5 text-sm text-muted">
               Seront figés : {snapshot.clauses.length} clause(s), {snapshot.engagements.length} engagement(s), {snapshot.echeances.length} échéance(s), {snapshot.parties.length} partie(s), {snapshot.evenements.length} événement(s), {snapshot.preuves.length} preuve(s).
             </div>
@@ -171,7 +178,7 @@ export default function OngletVersions({ contrat, versions, snapshot, historique
                   <summary className="cursor-pointer font-semibold text-ink">Clauses ({compare.snapshot.clauses.length})</summary>
                   <div className="mt-2 max-h-56 space-y-2 overflow-y-auto">
                     {compare.snapshot.clauses.map((c: any, i: number) => (
-                      <div key={i} className="rounded-sm bg-ink p-2.5">
+                      <div key={i} className="rounded-sm bg-white p-2.5">
                         <p className="text-xs font-semibold text-fuchsia-600">{c.categorie} — {c.titre}</p>
                         <p className="mt-0.5 line-clamp-3 text-xs text-muted">{c.contenu}</p>
                       </div>

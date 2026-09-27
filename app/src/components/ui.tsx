@@ -52,7 +52,6 @@ export function Field({ label, children, hint }: { label: string; children: Reac
 }
 
 export const inputCls = 'input';
-export const selectCls = 'input';
 
 export function Modal({ titre, sousTitre, onClose, children, large }: {
   titre: string; sousTitre?: string; onClose: () => void; children: React.ReactNode; large?: boolean;
@@ -90,12 +89,6 @@ export function BadgeStatut({ statut }: { statut: string | null | undefined }) {
   };
   const labels: Record<string, string> = { brouillon: 'Brouillon', actif: 'Actif', suspendu: 'Suspendu', termine: 'Terminé', archive: 'Archivé' };
   return <span className={`badge ${map[statut || ''] || 'badge-neutral'}`}>{labels[statut || ''] || statut || '—'}</span>;
-}
-
-export function BadgeGravite({ gravite }: { gravite: string | null | undefined }) {
-  if (gravite === 'critique') return <span className="badge badge-red">Critique</span>;
-  if (gravite === 'attention') return <span className="badge badge-pink">Attention</span>;
-  return <span className="badge badge-neutral">Info</span>;
 }
 
 // Bandeau de prudence — affiché partout où l'app analyse, suggère ou anticipe.

@@ -170,7 +170,7 @@ export function CarteAlerte({ gravite, titre, message, meta, piste, actions }: {
           <p className="font-semibold text-ink">{titre}</p>
           <p className="mt-1 text-sm leading-relaxed text-muted">{message}</p>
           {meta && <p className="mt-1.5 text-xs text-faint">{meta}</p>}
-          {piste && <p className="mt-2 rounded-sm bg-ink p-2.5 text-xs text-muted"><strong className="text-ink">Piste d’action : </strong>{piste}</p>}
+          {piste && <p className="mt-2 rounded-sm bg-white p-2.5 text-xs text-muted"><strong className="text-ink">Piste d’action : </strong>{piste}</p>}
           {actions && <div className="mt-2.5 flex flex-wrap gap-1 border-t border-line pt-2.5">{actions}</div>}
         </div>
       </div>

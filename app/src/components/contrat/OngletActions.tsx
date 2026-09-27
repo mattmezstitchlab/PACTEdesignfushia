@@ -119,7 +119,7 @@ export default function OngletActions({ contratId, actions, echeances, evenement
                 </p>
                 <p className="mt-1.5 text-sm leading-relaxed text-muted">{p.description}</p>
                 <p className="mt-1.5 text-xs text-faint">Source : {p.source}</p>
-                <p className="mt-2 rounded-sm bg-ink p-2.5 text-xs text-muted"><strong className="text-ink">Se préparer : </strong>{p.preparation}</p>
+                <p className="mt-2 rounded-sm bg-white p-2.5 text-xs text-muted"><strong className="text-ink">Se préparer : </strong>{p.preparation}</p>
                 <button onClick={() => depuisPrevision(`Préparer : ${p.titre}`, p.preparation)} className="mt-2 inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-attention hover:text-attention">
                   <Plus className="h-3.5 w-3.5" /> En faire une action
                 </button>

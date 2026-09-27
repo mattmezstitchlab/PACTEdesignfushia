@@ -112,7 +112,7 @@ export default function OngletParties({ contratId, liens, annuaire, onChange }: 
             <div key={l.id} className="card p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded bg-gradient-to-br from-fuchsia-700 to-fuchsia-500 text-sm font-bold text-ink">
+                  <span className="avatar" style={{ width: 44, height: 44, fontSize: 14 }}>
                     {initiales(l.partie?.nom)}
                   </span>
                   <div>
@@ -185,6 +185,7 @@ export default function OngletParties({ contratId, liens, annuaire, onChange }: 
               </Field>
               <Field label="Date de signature"><input type="date" value={form.signature_date || ''} onChange={(e) => setForm({ ...form, signature_date: e.target.value })} className={inputCls} /></Field>
             </div>
+            <p className="field-hint">Ce statut est une déclaration interne à PACTE, horodatée et tracée dans l’historique — ce n’est pas une signature électronique légalement qualifiée au sens du règlement eIDAS.</p>
             <div className="flex justify-end gap-2">
               <Btn variant="ghost" onClick={() => setModalLien(false)}>Annuler</Btn>
               <Btn onClick={sauverLien} disabled={busy}>{busy ? 'Enregistrement…' : editLien ? 'Mettre à jour' : 'Rattacher'}</Btn>

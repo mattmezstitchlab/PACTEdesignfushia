@@ -1,16 +1,19 @@
 import { useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
 import { api, logAction } from '../../lib/api';
-import type { ContratPartie, Engagement } from '../../lib/types';
+import type { ContratPartie, Echeance, Engagement, Evenement, Preuve } from '../../lib/types';
 import { fmtDate, delaiHumain, joursRestants } from '../../lib/format';
 import { Btn, Empty, Field, Modal, inputCls, useToast } from '../ui';
 
 // Chaque engagement = objet suivi : QUI / FAIT QUOI / POUR QUI / QUAND / OÙ /
 // CONDITIONS / PREUVE / SI NON REMPLI.
-export default function OngletEngagements({ contratId, engagements, liens, onChange }: {
+export default function OngletEngagements({ contratId, engagements, liens, echeances = [], evenements = [], preuves = [], onChange }: {
   contratId: number;
   engagements: Engagement[];
   liens: ContratPartie[];
+  echeances?: Echeance[];
+  evenements?: Evenement[];
+  preuves?: Preuve[];
   onChange: () => void;
 }) {
   const { toastEl, ok, err } = useToast();
@@ -83,12 +86,25 @@ export default function OngletEngagements({ contratId, engagements, liens, onCha
   };
 
   const supprimer = async (g: Engagement) => {
-    if (!confirm(`Supprimer l’engagement « ${g.titre} » ?`)) return;
+    const echLiees = echeances.filter((e) => e.engagement_id === g.id);
+    const evLiees = evenements.filter((e) => e.engagement_ids?.includes(g.id));
+    const preLiees = preuves.filter((p) => p.engagement_id === g.id);
+    const nbLies = echLiees.length + evLiees.length + preLiees.length;
+    const avertissement = nbLies > 0
+      ? `\n\n${nbLies} élément(s) y font référence (échéances, événements ou preuves) : ils seront conservés mais dissociés de cet engagement.`
+      : '';
+    if (!confirm(`Supprimer l’engagement « ${g.titre} » ?${avertissement}`)) return;
     try {
       await api.engagements.remove(g.id);
-      await logAction(contratId, 'engagement_supprime', 'engagement', g.id, { titre: g.titre });
+      // Cohérence référentielle : on ne laisse jamais de renvoi vers un engagement disparu.
+      await Promise.all([
+        ...echLiees.map((e) => api.echeances.update(e.id, { engagement_id: null })),
+        ...evLiees.map((e) => api.evenements.update(e.id, { engagement_ids: (e.engagement_ids || []).filter((id) => id !== g.id) })),
+        ...preLiees.map((p) => api.preuves.update(p.id, { engagement_id: null })),
+      ]);
+      await logAction(contratId, 'engagement_supprime', 'engagement', g.id, { titre: g.titre, elements_dissocies: nbLies });
       onChange();
-      ok('Engagement supprimé.');
+      ok(nbLies > 0 ? `Engagement supprimé — ${nbLies} élément(s) dissocié(s).` : 'Engagement supprimé.');
     } catch (e: any) { err(e.message); }
   };
 

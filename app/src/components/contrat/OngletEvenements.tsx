@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Plus, Pencil, Trash2, History, Paperclip, CalendarClock } from 'lucide-react';
+import { Plus, Pencil, Trash2, History, Paperclip } from 'lucide-react';
 import { api, logAction } from '../../lib/api';
-import type { Engagement, Evenement } from '../../lib/types';
+import type { Engagement, Evenement, Preuve } from '../../lib/types';
 import { TYPES_EVENEMENT } from '../../lib/types';
 import { fmtDate, typeEvenementLabel } from '../../lib/format';
 import { Btn, Empty, Field, Modal, inputCls, useToast } from '../ui';
@@ -9,10 +9,11 @@ import { Btn, Empty, Field, Modal, inputCls, useToast } from '../ui';
 // Journal des événements : paiement, retard, modification, annulation,
 // absence, demande, validation, refus, livraison, réception, incident,
 // impossibilité, force majeure déclarée, communication, document, signature…
-export default function OngletEvenements({ contratId, evenements, engagements, onChange }: {
+export default function OngletEvenements({ contratId, evenements, engagements, preuves, onChange }: {
   contratId: number;
   evenements: Evenement[];
   engagements: Engagement[];
+  preuves: Preuve[];
   onChange: () => void;
 }) {
   const { toastEl, ok, err } = useToast();
@@ -51,7 +52,6 @@ export default function OngletEvenements({ contratId, evenements, engagements, o
         date_evenement: form.date_evenement ? new Date(form.date_evenement).toISOString() : new Date().toISOString(),
         auteur: form.auteur || null, statut: form.statut || 'actif',
         engagement_ids: engSel.length ? engSel : null,
-        pieces: edit?.pieces || null,
       };
       if (edit) {
         await api.evenements.update(edit.id, payload);
@@ -82,6 +82,7 @@ export default function OngletEvenements({ contratId, evenements, engagements, o
   }, [evenements, filtre]);
 
   const typesPresents = useMemo(() => [...new Set(evenements.map((e) => e.type || 'autre'))], [evenements]);
+  const preuvesLiees = (evenementId: number) => preuves.filter((p) => p.evenement_id === evenementId);
 
   return (
     <div className="space-y-4">
@@ -122,19 +123,23 @@ export default function OngletEvenements({ contratId, evenements, engagements, o
                   </span>
                 </div>
                 {ev.description && <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted">{ev.description}</p>}
-                {(ev.engagement_ids?.length || ev.pieces?.length) ? (
+                {ev.engagement_ids?.length ? (
                   <div className="mt-2.5 flex flex-wrap gap-1.5 border-t border-line pt-2.5">
-                    {(ev.engagement_ids || []).map((id) => {
+                    {ev.engagement_ids.map((id) => {
                       const g = engagements.find((x) => x.id === id);
                       return g ? <span key={id} className="rounded-full bg-fuchsia-soft px-2.5 py-0.5 text-[11px] text-attention">⇄ {g.titre}</span> : null;
                     })}
-                    {(ev.pieces || []).map((p, i) => (
-                      <a key={i} href={p.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-[11px] text-muted hover:text-ink">
-                        <Paperclip className="h-3 w-3" /> {p.nom}
-                      </a>
-                    ))}
                   </div>
                 ) : null}
+                {preuvesLiees(ev.id).length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {preuvesLiees(ev.id).map((p) => (
+                      <span key={p.id} className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-[11px] text-muted">
+                        <Paperclip className="h-3 w-3" /> {p.titre}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </li>
           ))}
@@ -208,4 +213,3 @@ function pastilleType(t: string | null | undefined): string {
   return 'bg-fuchsia-soft text-attention';
 }
 
-export function IconEch() { void CalendarClock; return null; }

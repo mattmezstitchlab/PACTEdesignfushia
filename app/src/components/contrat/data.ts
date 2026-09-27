@@ -109,7 +109,7 @@ export function useContratData(id: number | null): ContratData {
       if (t === 'versions') setVersions(await api.versions.list({ contrat_id: id }));
       if (t === 'historique') setHistorique(await api.historique.list({ contrat_id: id }));
     } catch (e) {
-      console.warn('[contractos] rechargerTable', t, e);
+      console.warn('[pacte] rechargerTable', t, e);
     }
   }, [id]);
 

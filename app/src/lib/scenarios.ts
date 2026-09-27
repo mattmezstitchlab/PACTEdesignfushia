@@ -28,7 +28,7 @@ const AVERTISSEMENT_UNIVERSEL =
   'Elle ne constitue ni un avis juridique, ni une prédiction de décision judiciaire. ' +
   'En cas de litige, de montant significatif ou de doute, faites valider la situation par un avocat, un notaire ou un autre professionnel du droit.';
 
-function motsCles(texte: string | null | undefined): string[] {
+export function motsCles(texte: string | null | undefined): string[] {
   if (!texte) return [];
   return texte
     .toLowerCase()

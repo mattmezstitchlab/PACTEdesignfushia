@@ -115,7 +115,6 @@ export interface Evenement {
   auteur: string | null;
   statut: string | null;
   engagement_ids: number[] | null;
-  pieces: { nom: string; url: string }[] | null;
   created_at: string;
 }
 

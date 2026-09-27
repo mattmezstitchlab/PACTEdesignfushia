@@ -7,6 +7,7 @@ import {
 import { api, logAction, fichierVersBase64 } from '../lib/api';
 import { MODELES, modeleParCode } from '../lib/modeles';
 import { analyserDocument } from '../lib/analyse';
+import { motsCles } from '../lib/scenarios';
 import type { AnalyseDocument, Partie } from '../lib/types';
 import { Btn, Field, inputCls, Modal, Prudence, useToast } from '../components/ui';
 
@@ -23,9 +24,9 @@ export default function Nouveau() {
   const [params] = useSearchParams();
   const { toastEl, ok, err } = useToast();
   const modeInitial = (params.get('mode') as Mode) || 'nouveau';
-  const [etape, setEtape] = useState(0);
+  const [etape, setEtape] = useState(params.get('modele') ? 1 : 0);
   const [mode, setMode] = useState<Mode>(modeInitial);
-  const [modele, setModele] = useState('pacte_prive');
+  const [modele, setModele] = useState(params.get('modele') || 'pacte_prive');
   const [reponses, setReponses] = useState<Record<string, string>>({});
   const [contratCible, setContratCible] = useState<number | null>(null);
   const [contratsExistants, setContratsExistants] = useState<{ id: number; titre: string }[]>([]);
@@ -255,18 +256,41 @@ export default function Nouveau() {
         });
         await logAction(contratId, 'avenant_cree', 'contrat', contratId, { numero: num });
       }
+      let scenarioSituationId: number | null = null;
       if (mode === 'situation' && contratId) {
-        await api.evenements.create({
-          contrat_id: contratId, type: 'communication', titre: 'Analyse d’une situation',
-          description: reponses.objet || 'Situation à analyser.',
-          date_evenement: new Date().toISOString(), auteur: 'Utilisateur', statut: 'actif',
+        const texte = reponses.objet || 'Situation à analyser.';
+        const ev = await api.evenements.create({
+          contrat_id: contratId, type: 'communication', titre: 'Situation déclarée',
+          description: texte,
+          date_evenement: new Date().toISOString(), auteur: 'Utilisateur', statut: 'a_verifier',
         });
-        await logAction(contratId, 'situation_analysee', 'contrat', contratId, { objet: reponses.objet });
+        // Un scénario ad hoc réutilise le même moteur d'évaluation (ÉVÉNEMENTS →
+        // ENGAGEMENTS → CLAUSES → PREUVES → ACTIONS) que les scénarios types :
+        // aucune règle métier dupliquée pour le mode Situation.
+        const cles = motsCles(texte).slice(0, 12).join(' ');
+        const scenario = await api.scenarios.create({
+          contrat_id: contratId,
+          nom: `Situation déclarée le ${new Date().toLocaleDateString('fr-FR')}`,
+          declencheur: texte,
+          declencheur_type: 'communication',
+          condition_verif: 'Vérifier les faits déclarés au regard des clauses, engagements et preuves déjà versés au dossier.',
+          engagements_cibles: null,
+          clauses_mots_cles: cles,
+          actions_suggerees: null,
+          note_prudence: 'Situation déclarée par une partie : à vérifier, ni faute ni conclusion juridique à ce stade.',
+          actif: true,
+        });
+        scenarioSituationId = scenario.id;
+        await logAction(contratId, 'situation_analysee', 'evenement', ev.id, { objet: texte });
       }
 
       await logAction(contratId, estNouveau ? 'contrat_cree' : mode === 'avenant' ? 'avenant_initie' : 'situation_enregistree', 'contrat', contratId, { mode });
-      ok(mode === 'avenant' ? 'Avenant initié — rédigez-le puis faites-le signer.' : mode === 'situation' ? 'Situation enregistrée — consultez les scénarios.' : 'Contrat créé — complétez-le à votre rythme.');
-      nav(`/contrats/${contratId}`);
+      ok(mode === 'avenant' ? 'Avenant initié — rédigez-le puis faites-le signer.' : mode === 'situation' ? 'Situation enregistrée — voici ce que le moteur peut déjà en dire.' : 'Contrat créé — complétez-le à votre rythme.');
+      if (mode === 'situation' && scenarioSituationId) {
+        nav(`/contrats/${contratId}?onglet=scenarios&situation=${scenarioSituationId}`);
+      } else {
+        nav(`/contrats/${contratId}`);
+      }
     } catch (e: any) {
       err(e.message || 'Création impossible');
     } finally {

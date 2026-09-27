@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Pencil, Trash2, FlaskConical, CheckCircle2, FileText, Paperclip, ListChecks, ArrowRight } from 'lucide-react';
 import { api, logAction } from '../../lib/api';
 import type { Clause, Echeance, Engagement, Evenement, Preuve, Scenario } from '../../lib/types';
@@ -20,6 +21,19 @@ export default function OngletScenarios({ contratId, scenarios, ctx, droit, onCh
   const [form, setForm] = useState<any>({});
   const [selectionne, setSelectionne] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [params, setParams] = useSearchParams();
+
+  // Ouverture directe depuis le mode Situation (Nouveau → ?situation=<id>) :
+  // sélectionne et affiche automatiquement l'évaluation du scénario ad hoc.
+  useEffect(() => {
+    const idParam = Number(params.get('situation'));
+    if (idParam && scenarios.some((s) => s.id === idParam)) {
+      setSelectionne(idParam);
+      const next = new URLSearchParams(params);
+      next.delete('situation');
+      setParams(next, { replace: true });
+    }
+  }, [params, scenarios, setParams]);
 
   const evaluation = useMemo(() => {
     const s = scenarios.find((x) => x.id === selectionne);
@@ -135,7 +149,7 @@ export default function OngletScenarios({ contratId, scenarios, ctx, droit, onCh
             ) : (
               <div className="space-y-3 rounded border border-fuchsia-200 bg-white p-5">
                 <h3 className="font-display text-lg font-semibold text-ink">Évaluation — {evaluation.scenario.nom}</h3>
-                <p className="rounded-sm bg-ink p-3 text-sm text-muted"><strong className="text-fuchsia-600">À vérifier : </strong>{evaluation.scenario.condition_verif || '—'}</p>
+                <p className="rounded-sm bg-white p-3 text-sm text-muted"><strong className="text-fuchsia-600">À vérifier : </strong>{evaluation.scenario.condition_verif || '—'}</p>
 
                 <EvalBloc icon={<ListChecks className="h-4 w-4" />} titre={`Événements déclencheurs (${evaluation.evenements_declencheurs.length})`} vide="Aucun événement correspondant pour l’instant — le scénario reste en veille.">
                   {evaluation.evenements_declencheurs.map((ev) => <li key={ev.id}>{ev.titre}</li>)}
@@ -207,7 +221,7 @@ export default function OngletScenarios({ contratId, scenarios, ctx, droit, onCh
 
 function EvalBloc({ icon, titre, vide, children }: { icon: React.ReactNode; titre: string; vide: string; children: React.ReactNode }) {
   return (
-    <div className="rounded border border-line bg-ink p-4">
+    <div className="rounded border border-line bg-white p-4">
       <p className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-ink">{icon} {titre}</p>
       {Array.isArray(children) && children.length === 0 ? (
         <p className="text-sm italic text-faint">{vide}</p>
