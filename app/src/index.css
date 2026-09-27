@@ -397,6 +397,70 @@ tbody tr:hover { background: #fbf9f8; }
   .feature-panel-media { aspect-ratio: 4 / 3; }
 }
 
+/* ---------- Cœur visuel du moteur (séquence éditoriale, pas un
+   diagramme technique) : IDENTITÉ → OBJET → RELATION → ENGAGEMENT →
+   ÉVÉNEMENT → PREUVE → DONNÉE → ANALYSE → SCÉNARIO → DÉCISION.
+   Desktop : ligne horizontale continue. Mobile : séquence verticale,
+   même motif que la Timeline (ligne + nœuds) pour rester cohérent avec
+   l'application réelle. ---------- */
+/* Le moteur se présente toujours sur fond sombre (.editorial-band) :
+   les couleurs ci-dessous sont donc calées pour un contraste correct
+   sur fond quasi-noir (texte clair), et non sur les tons clairs utilisés
+   ailleurs dans l'application. */
+.engine-seq { position: relative; padding: 6px 0 4px; }
+.engine-seq-row { display: flex; align-items: flex-start; gap: 0; }
+.engine-seq-step { position: relative; flex: 1 1 0; min-width: 0; padding: 0 8px; text-align: center; }
+.engine-seq-step::before { content: ""; position: absolute; top: 7px; left: 0; right: 0; height: 1px; background: rgba(255,255,255,.22); }
+.engine-seq-step:first-child::before { left: 50%; }
+.engine-seq-step:last-child::before { right: 50%; }
+.engine-seq-dot { position: relative; z-index: 1; width: 15px; height: 15px; border-radius: 50%; margin: 0 auto 14px; background: var(--color-ink); border: 3px solid rgba(255,255,255,.85); box-shadow: 0 0 0 1px rgba(255,255,255,.22); }
+.engine-seq-step:nth-child(6) .engine-seq-dot, .engine-seq-step:nth-child(7) .engine-seq-dot, .engine-seq-step:nth-child(8) .engine-seq-dot, .engine-seq-step:nth-child(9) .engine-seq-dot, .engine-seq-step:nth-child(10) .engine-seq-dot { background: var(--color-fuchsia); border-color: var(--color-fuchsia); }
+.engine-seq-index { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .12em; color: rgba(255,255,255,.5); margin-bottom: 4px; }
+.engine-seq-label { display: block; font-family: var(--font-display), sans-serif; font-weight: 800; font-size: 13.5px; letter-spacing: -.01em; color: #fff; line-height: 1.2; }
+.engine-seq-desc { display: block; margin-top: 6px; font-size: 11px; color: rgba(255,255,255,.68); line-height: 1.4; }
+@media (max-width: 860px) {
+  .engine-seq-row { flex-direction: column; gap: 0; }
+  .engine-seq-step { display: grid; grid-template-columns: 24px minmax(0,1fr); column-gap: 16px; text-align: left; padding: 0 0 22px; min-width: 0; }
+  .engine-seq-step::before { top: 8px; bottom: -14px; left: 11px; right: auto; width: 1px; height: auto; }
+  .engine-seq-step:first-child::before { top: 8px; }
+  .engine-seq-step:last-child { padding-bottom: 0; }
+  .engine-seq-step:last-child::before { bottom: 8px; }
+  .engine-seq-dot { margin: 3px 0 0; grid-row: 1; grid-column: 1; }
+  .engine-seq-index { grid-row: 1; grid-column: 2; margin-bottom: 0; align-self: center; }
+  .engine-seq-label { grid-row: 2; grid-column: 2; margin-top: 4px; }
+  .engine-seq-desc { grid-row: 3; grid-column: 2; }
+}
+
+/* ---------- Exemples concrets (démonstration pédagogique) ---------- */
+.demo-chain { border: 1px solid var(--color-line); background: #fff; padding: 22px clamp(18px,3vw,30px) 26px; }
+.demo-chain-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--color-attention); background: var(--color-fuchsia-soft); padding: 4px 9px; border-radius: 999px; margin-bottom: 14px; }
+.demo-chain h3 { font-family: var(--font-display), sans-serif; font-weight: 800; font-size: 19px; margin: 0 0 14px; }
+.demo-chain-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.demo-chain-steps span.node { font-size: 12px; font-weight: 700; padding: 6px 12px; border: 1px solid var(--color-line); background: var(--color-ivoire); white-space: nowrap; }
+.demo-chain-steps span.arrow { color: var(--color-faint); font-size: 13px; }
+@media (max-width: 640px) {
+  .demo-chain-steps { flex-direction: column; align-items: stretch; }
+  .demo-chain-steps span.node { text-align: center; }
+  .demo-chain-steps span.arrow { text-align: center; transform: rotate(90deg); }
+}
+
+/* ---------- Section pleine largeur, fond sombre, texte clair (PROBLÈME,
+   MOTEUR, ENTRER DANS PACTE) — rupture de rythme éditoriale sans
+   gradient décoratif. ---------- */
+.editorial-band { background: var(--color-ink); color: #fff; padding: clamp(36px,6vw,64px); }
+.editorial-band .eyebrow { color: #f2a9c9; }
+.editorial-band h2 { font-family: var(--font-display), sans-serif; font-weight: 800; font-size: clamp(24px,3vw,36px); letter-spacing: -.03em; line-height: 1.1; color: #fff; margin: 10px 0 16px; }
+.editorial-band p { color: rgba(255,255,255,.82); font-size: 14.5px; line-height: 1.7; }
+.editorial-band.on-ivoire { background: var(--color-ivoire); color: var(--color-ink); }
+.editorial-band.on-ivoire .eyebrow { color: var(--color-attention); }
+.editorial-band.on-ivoire h2 { color: var(--color-ink); }
+.editorial-band.on-ivoire p { color: var(--color-muted); }
+.probleme-list { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px 22px; margin-top: 22px; list-style: none; padding: 0; }
+.probleme-list li { font-size: 13.5px; color: rgba(255,255,255,.85); padding-left: 16px; position: relative; }
+.probleme-list li::before { content: "—"; position: absolute; left: 0; color: var(--color-fuchsia); }
+@media (max-width: 640px) { .probleme-list { grid-template-columns: 1fr 1fr; } }
+
+
 /* ---------- Chips / avatars ---------- */
 .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--color-fuchsia-soft); color: var(--color-attention); display: grid; place-items: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
 

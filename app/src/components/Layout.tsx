@@ -42,7 +42,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <span className="logo-mark">P<span className="logo-dot">.</span></span>
             PACTE
           </Link>
-          <button onClick={() => setOuvert(false)} className="icon-button" style={{ color: '#fff', display: ouvert ? 'grid' : 'none' }}>
+          <button onClick={() => setOuvert(false)} className="icon-button" aria-label="Fermer le menu" style={{ color: '#fff', display: ouvert ? 'grid' : 'none' }}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -84,7 +84,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className="app-main">
         <header className="app-topbar no-print">
           <div className="flex items-center gap-3">
-            <button className="mobile-menu-btn" onClick={() => setOuvert(true)}><Menu className="h-5 w-5" /></button>
+            <button className="mobile-menu-btn" onClick={() => setOuvert(true)} aria-label="Ouvrir le menu"><Menu className="h-5 w-5" /></button>
             <p className="breadcrumb">{titreCourant}</p>
           </div>
           <div className="top-right">
