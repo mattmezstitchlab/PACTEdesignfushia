@@ -1,0 +1,2 @@
+import { resourceHandler } from './_handler.js';
+export default resourceHandler('actions');
