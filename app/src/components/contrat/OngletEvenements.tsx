@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, History, Paperclip } from 'lucide-react';
-import { api, logAction } from '../../lib/api';
+import { api, logActionAuto, parentRef } from '../../lib/api';
 import type { Engagement, Evenement, Preuve } from '../../lib/types';
 import { TYPES_EVENEMENT } from '../../lib/types';
 import { fmtDate, typeEvenementLabel } from '../../lib/format';
@@ -9,8 +9,9 @@ import { Btn, Empty, Field, Modal, inputCls, useToast } from '../ui';
 // Journal des événements : paiement, retard, modification, annulation,
 // absence, demande, validation, refus, livraison, réception, incident,
 // impossibilité, force majeure déclarée, communication, document, signature…
-export default function OngletEvenements({ contratId, evenements, engagements, preuves, onChange }: {
-  contratId: number;
+export default function OngletEvenements({ contratId, objetId, evenements, engagements, preuves, onChange }: {
+  contratId?: number;
+  objetId?: number;
   evenements: Evenement[];
   engagements: Engagement[];
   preuves: Preuve[];
@@ -47,7 +48,7 @@ export default function OngletEvenements({ contratId, evenements, engagements, p
     setBusy(true);
     try {
       const payload = {
-        contrat_id: contratId, type: form.type || 'autre', titre: form.titre.trim(),
+        ...parentRef(contratId, objetId), type: form.type || 'autre', titre: form.titre.trim(),
         description: form.description || null,
         date_evenement: form.date_evenement ? new Date(form.date_evenement).toISOString() : new Date().toISOString(),
         auteur: form.auteur || null, statut: form.statut || 'actif',
@@ -55,10 +56,10 @@ export default function OngletEvenements({ contratId, evenements, engagements, p
       };
       if (edit) {
         await api.evenements.update(edit.id, payload);
-        await logAction(contratId, 'evenement_modifie', 'evenement', edit.id, { titre: form.titre });
+        await logActionAuto(contratId, objetId, 'evenement_modifie', 'evenement', edit.id, { titre: form.titre });
       } else {
         const c = await api.evenements.create(payload);
-        await logAction(contratId, 'evenement_cree', 'evenement', c.id, { type: form.type, titre: form.titre });
+        await logActionAuto(contratId, objetId, 'evenement_cree', 'evenement', c.id, { type: form.type, titre: form.titre });
       }
       setModal(false);
       onChange();
@@ -70,7 +71,7 @@ export default function OngletEvenements({ contratId, evenements, engagements, p
     if (!confirm(`Supprimer l’événement « ${ev.titre} » ?`)) return;
     try {
       await api.evenements.remove(ev.id);
-      await logAction(contratId, 'evenement_supprime', 'evenement', ev.id, { titre: ev.titre });
+      await logActionAuto(contratId, objetId, 'evenement_supprime', 'evenement', ev.id, { titre: ev.titre });
       onChange();
       ok('Événement supprimé.');
     } catch (e: any) { err(e.message); }

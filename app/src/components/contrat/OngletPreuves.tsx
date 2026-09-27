@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Trash2, FileCheck2, Upload, ExternalLink } from 'lucide-react';
-import { api, logAction, fichierVersBase64 } from '../../lib/api';
+import { api, logActionAuto, parentRef, fichierVersBase64 } from '../../lib/api';
 import type { Engagement, Evenement, Preuve } from '../../lib/types';
 import { TYPES_PREUVE } from '../../lib/types';
 import { fmtDate, typePreuveLabel, empreinteDoc } from '../../lib/format';
@@ -8,8 +8,9 @@ import { Btn, Empty, Field, Modal, inputCls, useToast } from '../ui';
 
 // Preuves : chaîne documentaire horodatée. Chaque pièce reçoit une
 // empreinte de traçabilité et peut être liée à un engagement / événement.
-export default function OngletPreuves({ contratId, preuves, engagements, evenements, onChange }: {
-  contratId: number;
+export default function OngletPreuves({ contratId, objetId, preuves, engagements, evenements, onChange }: {
+  contratId?: number;
+  objetId?: number;
   preuves: Preuve[];
   engagements: Engagement[];
   evenements: Evenement[];
@@ -43,7 +44,7 @@ export default function OngletPreuves({ contratId, preuves, engagements, eveneme
       }
       setEtape('Scellement de la preuve…');
       const c = await api.preuves.create({
-        contrat_id: contratId,
+        ...parentRef(contratId, objetId),
         titre: form.titre.trim(),
         type: form.type || 'autre',
         description: form.description || null,
@@ -53,9 +54,9 @@ export default function OngletPreuves({ contratId, preuves, engagements, eveneme
         evenement_id: form.evenement_id ? Number(form.evenement_id) : null,
         auteur: form.auteur || null,
         date_preuve: form.date_preuve || new Date().toISOString().slice(0, 10),
-        empreinte: empreinteDoc(`${contratId}-${form.titre}-${nom || 'note'}`),
+        empreinte: empreinteDoc(`${contratId ?? objetId}-${form.titre}-${nom || 'note'}`),
       });
-      await logAction(contratId, 'preuve_versee', 'preuve', c.id, { titre: form.titre, fichier: !!url });
+      await logActionAuto(contratId, objetId, 'preuve_versee', 'preuve', c.id, { titre: form.titre, fichier: !!url });
       setModal(false);
       setEtape('');
       onChange();
@@ -67,7 +68,7 @@ export default function OngletPreuves({ contratId, preuves, engagements, eveneme
     if (!confirm(`Retirer « ${p.titre} » de la chaîne documentaire ? (Le fichier reste stocké.)`)) return;
     try {
       await api.preuves.remove(p.id);
-      await logAction(contratId, 'preuve_retiree', 'preuve', p.id, { titre: p.titre });
+      await logActionAuto(contratId, objetId, 'preuve_retiree', 'preuve', p.id, { titre: p.titre });
       onChange();
       ok('Preuve retirée.');
     } catch (e: any) { err(e.message); }

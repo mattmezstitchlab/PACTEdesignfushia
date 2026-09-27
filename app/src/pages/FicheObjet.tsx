@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
-  ArrowLeft, Users, BookOpen, ListChecks, History, CalendarClock, FileCheck2,
-  Bell, FlaskConical, ListTodo, GitBranch, FolderOpen, Pencil, Info, Globe2,
-  CalendarDays, Wallet, FileText,
+  ArrowLeft, Users, ListChecks, History, CalendarClock, FileCheck2,
+  Bell, FlaskConical, ListTodo, Pencil, Info, Globe2,
+  CalendarDays, Wallet, Boxes, Gauge, Gavel,
 } from 'lucide-react';
-import { api, logAction } from '../lib/api';
-import { fmtDate, fmtMontant, statutContratLabel } from '../lib/format';
-import { modeleParCode } from '../lib/modeles';
-import { Spinner, BadgeSante, BadgeStatut, Btn, Field, Modal, inputCls, useToast, MiniStat, LigneEtat } from '../components/ui';
-import { useContratData } from '../components/contrat/data';
-import OngletParties from '../components/contrat/OngletParties';
-import OngletClauses from '../components/contrat/OngletClauses';
+import { api, logActionObjet } from '../lib/api';
+import { fmtDate, fmtMontant } from '../lib/format';
+import { universParCode } from '../lib/univers';
+import { Spinner, BadgeSante, BadgeStatut, Btn, Field, Modal, inputCls, useToast, MiniStat, LigneEtat, Prudence } from '../components/ui';
+import { useObjetData } from '../components/objet/data';
+import OngletRelations from '../components/objet/OngletRelations';
 import OngletEngagements, { statutLabel as statutEngagementLabel } from '../components/contrat/OngletEngagements';
 import OngletEvenements from '../components/contrat/OngletEvenements';
 import OngletEcheances from '../components/contrat/OngletEcheances';
@@ -19,26 +18,30 @@ import OngletPreuves from '../components/contrat/OngletPreuves';
 import OngletAlertes from '../components/contrat/OngletAlertes';
 import OngletScenarios from '../components/contrat/OngletScenarios';
 import OngletActions from '../components/contrat/OngletActions';
-import OngletVersions from '../components/contrat/OngletVersions';
-import OngletDossier from '../components/contrat/OngletDossier';
+import OngletMetriques from '../components/objet/OngletMetriques';
+import OngletDecisions from '../components/objet/OngletDecisions';
 import { type ItemTimeline, decouperPhases, PhaseTimeline } from '../components/timeline/Timeline';
+import type { ContratPartie } from '../lib/types';
 
 const ONGLETS = [
   { id: 'apercu', label: 'Aperçu', icon: Info },
-  { id: 'parties', label: 'Parties', icon: Users },
-  { id: 'clauses', label: 'Clauses', icon: BookOpen },
+  { id: 'relations', label: 'Relations', icon: Users },
   { id: 'engagements', label: 'Engagements', icon: ListChecks },
   { id: 'evenements', label: 'Événements', icon: History },
   { id: 'echeances', label: 'Échéances', icon: CalendarClock },
   { id: 'preuves', label: 'Preuves', icon: FileCheck2 },
+  { id: 'donnees', label: 'Données', icon: Gauge },
   { id: 'alertes', label: 'Alertes', icon: Bell },
   { id: 'scenarios', label: 'Scénarios', icon: FlaskConical },
   { id: 'actions', label: 'Actions', icon: ListTodo },
-  { id: 'versions', label: 'Versions', icon: GitBranch },
-  { id: 'dossier', label: 'Dossier', icon: FolderOpen },
+  { id: 'decisions', label: 'Décisions', icon: Gavel },
 ];
 
-export default function FicheContrat() {
+// Fiche d'un objet suivi — le cas général du moteur (le contrat, voir
+// FicheContrat.tsx, en est le cas historique particulier). Mêmes
+// briques génériques : Relation/Engagement/Échéance/Événement/Preuve/
+// Alerte/Scénario/Décision + Donnée (métrique) propre aux objets.
+export default function FicheObjet() {
   const { id } = useParams();
   const numId = Number(id);
   const nav = useNavigate();
@@ -49,22 +52,31 @@ export default function FicheContrat() {
   const [form, setForm] = useState<any>({});
   const [busy, setBusy] = useState(false);
 
-  const d = useContratData(isNaN(numId) ? null : numId);
-  const { contrat } = d;
+  const d = useObjetData(isNaN(numId) ? null : numId);
+  const { objet } = d;
 
   const changerOnglet = (o: string) => setParams(o === 'apercu' ? {} : { onglet: o }, { replace: true });
 
   useEffect(() => {
-    if (contrat) {
+    if (objet) {
       setForm({
-        titre: contrat.titre || '', statut: contrat.statut || 'brouillon', objet: contrat.objet || '',
-        pays: contrat.pays || '', droit_applicable: contrat.droit_applicable || '', ville: contrat.ville || '',
-        date_debut: (contrat.date_debut || '').slice(0, 10), date_fin: (contrat.date_fin || '').slice(0, 10),
-        duree: contrat.duree || '', montant_total: contrat.montant_total ?? '', devise: contrat.devise || 'EUR',
-        notes: contrat.notes || '',
+        titre: objet.titre || '', statut: objet.statut || 'brouillon', description: objet.description || '',
+        pays: objet.pays || '', droit_applicable: objet.droit_applicable || '',
+        date_debut: (objet.date_debut || '').slice(0, 10), date_fin: (objet.date_fin || '').slice(0, 10),
+        valeur_declaree: objet.valeur_declaree ?? '', devise: objet.devise || 'EUR', notes: objet.notes || '',
       });
     }
-  }, [contrat?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [objet?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Relations adaptées au format attendu par OngletEngagements (QUI /
+  // POUR QUI) — même composant, aucune duplication de logique.
+  const liensAdapt: ContratPartie[] = useMemo(() => d.relations
+    .filter((r) => r.partie_id)
+    .map((r) => ({
+      id: r.id, contrat_id: 0, partie_id: r.partie_id as number, role: r.role,
+      qualite: null, relation: r.type_relation, engagement_resume: null,
+      signature_statut: null, signature_date: null, created_at: r.created_at, partie: r.partie,
+    })), [d.relations]);
 
   const timeline = useMemo(() => {
     const items: ItemTimeline[] = [];
@@ -100,36 +112,34 @@ export default function FicheContrat() {
     return items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [d.engagements, d.echeances, d.evenements, d.preuves]);
 
-  // AVANT (avant le début du contrat) / PENDANT (vie du contrat) / APRÈS
-  // (après son terme) — la Timeline reste le fil conducteur du contrat.
   const phases = useMemo(
-    () => decouperPhases(timeline, contrat?.date_debut ?? null, contrat?.date_fin ?? null),
-    [timeline, contrat?.date_debut, contrat?.date_fin],
+    () => decouperPhases(timeline, objet?.date_debut ?? null, objet?.date_fin ?? null),
+    [timeline, objet?.date_debut, objet?.date_fin],
   );
 
-  if (d.loading) return <Spinner label="Ouverture du contrat…" />;
-  if (d.erreur || !contrat) {
+  if (d.loading) return <Spinner label="Ouverture de l’objet…" />;
+  if (d.erreur || !objet) {
     return (
       <div className="space-y-4">
-        <button onClick={() => nav('/contrats')} className="inline-flex cursor-pointer items-center gap-1.5 text-sm text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" /> Retour aux contrats</button>
-        <div className="rounded border border-critique bg-critique-soft p-6 text-sm text-critique">{d.erreur || 'Contrat introuvable.'}</div>
+        <button onClick={() => nav('/objets')} className="inline-flex cursor-pointer items-center gap-1.5 text-sm text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" /> Retour aux objets</button>
+        <div className="rounded border border-critique bg-critique-soft p-6 text-sm text-critique">{d.erreur || 'Objet introuvable.'}</div>
       </div>
     );
   }
 
-  const m = modeleParCode(contrat.type_modele);
+  const u = universParCode(objet.univers);
   const alertesActives = d.alertes.filter((a) => a.statut === 'active').length;
   const compte = (o: string) => {
-    if (o === 'parties') return d.contratParties.length;
-    if (o === 'clauses') return d.clauses.length;
+    if (o === 'relations') return d.relations.length;
     if (o === 'engagements') return d.engagements.length;
     if (o === 'evenements') return d.evenements.length;
     if (o === 'echeances') return d.echeances.length;
     if (o === 'preuves') return d.preuves.length;
+    if (o === 'donnees') return d.metriques.length;
     if (o === 'alertes') return alertesActives;
     if (o === 'scenarios') return d.scenarios.length;
     if (o === 'actions') return d.actions.filter((a) => a.statut === 'a_faire' || a.statut === 'en_cours').length;
-    if (o === 'versions') return d.versions.length;
+    if (o === 'decisions') return d.decisions.length;
     return null;
   };
 
@@ -137,16 +147,16 @@ export default function FicheContrat() {
     if (!form.titre?.trim()) { err('Le titre est obligatoire.'); return; }
     setBusy(true);
     try {
-      await api.contrats.update(contrat.id, {
-        titre: form.titre.trim(), statut: form.statut, objet: form.objet || null,
-        pays: form.pays || null, droit_applicable: form.droit_applicable || null, ville: form.ville || null,
-        date_debut: form.date_debut || null, date_fin: form.date_fin || null, duree: form.duree || null,
-        montant_total: form.montant_total === '' ? null : Number(String(form.montant_total).replace(',', '.')) || null,
+      await api.objets.update(objet.id, {
+        titre: form.titre.trim(), statut: form.statut, description: form.description || null,
+        pays: form.pays || null, droit_applicable: form.droit_applicable || null,
+        date_debut: form.date_debut || null, date_fin: form.date_fin || null,
+        valeur_declaree: form.valeur_declaree === '' ? null : Number(String(form.valeur_declaree).replace(',', '.')) || null,
         devise: form.devise || 'EUR', notes: form.notes || null,
       });
-      await logAction(contrat.id, 'contrat_modifie', 'contrat', contrat.id, {});
+      await logActionObjet(objet.id, 'objet_modifie', 'objet', objet.id, {});
       setModalInfo(false);
-      d.rechargerTable('contrat');
+      d.rechargerTable('objet');
       ok('Informations mises à jour.');
     } catch (e: any) { err(e.message); } finally { setBusy(false); }
   };
@@ -154,32 +164,31 @@ export default function FicheContrat() {
   return (
     <div className="space-y-5">
       {toastEl}
-      <button onClick={() => nav('/contrats')} className="no-print inline-flex cursor-pointer items-center gap-1.5 text-sm text-muted hover:text-ink">
-        <ArrowLeft className="h-4 w-4" /> Tous les contrats
+      <button onClick={() => nav('/objets')} className="no-print inline-flex cursor-pointer items-center gap-1.5 text-sm text-muted hover:text-ink">
+        <ArrowLeft className="h-4 w-4" /> Tous les objets
       </button>
 
       {/* En-tête */}
       <div className="overflow-hidden card">
-        <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${m.couleur}, transparent)` }} />
+        <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${u?.couleur || '#e2547e'}, transparent)` }} />
         <div className="p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-faint">{m.nom} · v{contrat.version_courante || 1}</p>
-              <h1 className="font-display mt-1 text-2xl font-bold text-ink sm:text-3xl">{contrat.titre}</h1>
-              {contrat.objet && <p className="mt-2 line-clamp-2 text-sm text-muted">{contrat.objet}</p>}
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-faint">{u?.nom || objet.univers} · {objet.type_objet}</p>
+              <h1 className="font-display mt-1 text-2xl font-bold text-ink sm:text-3xl">{objet.titre}</h1>
+              {objet.description && <p className="mt-2 line-clamp-2 text-sm text-muted">{objet.description}</p>}
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted">
-                {(contrat.pays || contrat.droit_applicable) && <span className="inline-flex items-center gap-1.5"><Globe2 className="h-3.5 w-3.5" /> {[contrat.ville, contrat.pays].filter(Boolean).join(', ')}{contrat.droit_applicable ? ` · ${contrat.droit_applicable}` : ''}</span>}
-                {(contrat.date_debut || contrat.date_fin) && <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" /> {fmtDate(contrat.date_debut)} → {fmtDate(contrat.date_fin)}{contrat.duree ? ` (${contrat.duree})` : ''}</span>}
-                {contrat.montant_total != null && <span className="inline-flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5" /> {fmtMontant(contrat.montant_total, contrat.devise || 'EUR')}</span>}
+                {(objet.pays || objet.droit_applicable) && <span className="inline-flex items-center gap-1.5"><Globe2 className="h-3.5 w-3.5" /> {objet.pays}{objet.droit_applicable ? ` · ${objet.droit_applicable}` : ''}</span>}
+                {(objet.date_debut || objet.date_fin) && <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" /> {fmtDate(objet.date_debut)} → {fmtDate(objet.date_fin)}</span>}
+                {objet.valeur_declaree != null && <span className="inline-flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5" /> {fmtMontant(objet.valeur_declaree, objet.devise || 'EUR')} (déclarée)</span>}
               </div>
             </div>
             <div className="flex flex-col items-end gap-2">
-              <span className="flex gap-2"><BadgeStatut statut={contrat.statut} /><BadgeSante sante={contrat.sante} /></span>
+              <span className="flex gap-2"><BadgeStatut statut={objet.statut} /><BadgeSante sante={objet.sante} /></span>
               <Btn variant="soft" onClick={() => setModalInfo(true)}><Pencil className="h-4 w-4" /> Modifier les infos</Btn>
             </div>
           </div>
 
-          {/* Navigation par onglets */}
           <nav className="no-print -mx-1 mt-5 flex gap-1.5 overflow-x-auto px-1 pb-1">
             {ONGLETS.map((o) => {
               const actif = onglet === o.id;
@@ -198,26 +207,25 @@ export default function FicheContrat() {
         </div>
       </div>
 
-      {/* Contenu */}
       {onglet === 'apercu' && (
         <div className="space-y-5">
           <div className="card p-5">
-            <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-ink"><FileText className="h-5 w-5 text-fuchsia" /> État du dossier</h2>
+            <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-ink"><Boxes className="h-5 w-5 text-fuchsia" /> État de l’objet</h2>
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
-              <MiniStat n={d.contratParties.length} l="Parties" o="parties" go={changerOnglet} />
-              <MiniStat n={d.clauses.length} l="Clauses" o="clauses" go={changerOnglet} />
+              <MiniStat n={d.relations.length} l="Relations" o="relations" go={changerOnglet} />
               <MiniStat n={d.engagements.length} l="Engagements" o="engagements" go={changerOnglet} />
               <MiniStat n={d.evenements.length} l="Événements" o="evenements" go={changerOnglet} />
               <MiniStat n={d.echeances.length} l="Échéances" o="echeances" go={changerOnglet} />
               <MiniStat n={d.preuves.length} l="Preuves" o="preuves" go={changerOnglet} />
+              <MiniStat n={d.metriques.length} l="Données" o="donnees" go={changerOnglet} />
             </div>
             <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
-              <LigneEtat label="Signatures" valeur={`${d.contratParties.filter((p) => p.signature_statut === 'signee').length}/${d.contratParties.length} recueillies`} alerte={d.contratParties.some((p) => p.signature_statut !== 'signee')} />
               <LigneEtat label="Engagements réalisés" valeur={`${d.engagements.filter((g) => g.statut === 'realise').length}/${d.engagements.length}`} />
               <LigneEtat label="Alertes actives" valeur={String(alertesActives)} alerte={alertesActives > 0} />
               <LigneEtat label="Actions ouvertes" valeur={String(d.actions.filter((a) => a.statut === 'a_faire' || a.statut === 'en_cours').length)} />
+              <LigneEtat label="Décisions enregistrées" valeur={String(d.decisions.length)} />
             </div>
-            {!contrat.pays && !contrat.droit_applicable && (
+            {!objet.pays && !objet.droit_applicable && (
               <p className="mt-3 rounded-sm bg-fuchsia-50 p-3 text-xs text-fuchsia-700">
                 Pays et droit applicable non renseignés : l’interprétation reste plus incertaine. Ajoutez-les via « Modifier les infos ».
               </p>
@@ -226,15 +234,15 @@ export default function FicheContrat() {
 
           <div className="card p-5">
             <h2 className="mb-1 font-display text-lg font-semibold text-ink">Timeline — avant, pendant, après</h2>
-            <p className="mb-4 text-sm text-muted">Le fil conducteur du contrat : chaque étape est reliée à ses engagements, échéances et preuves quand ces liens existent.</p>
+            <p className="mb-4 text-sm text-muted">Le même fil conducteur que pour un contrat : chaque étape est reliée à ses engagements, échéances et preuves quand ces liens existent.</p>
             {timeline.length === 0 ? (
               <p className="empty p-6 text-center text-sm text-muted">La timeline se remplira avec les dates des engagements, échéances et événements.</p>
             ) : (
               <div className="timeline-layout">
                 <div className="timeline">
-                  <PhaseTimeline label="Avant — création, négociation, signature" items={phases.avant} vide="Aucun élément daté avant le début du contrat." changerOnglet={changerOnglet} />
-                  <PhaseTimeline label="Pendant — vie du contrat" items={phases.pendant} vide="Aucun élément daté sur la période du contrat pour l’instant." changerOnglet={changerOnglet} />
-                  <PhaseTimeline label="Après — exécution, clôture, différend" items={phases.apres} vide="Rien après le terme du contrat pour l’instant." changerOnglet={changerOnglet} />
+                  <PhaseTimeline label="Avant — préparation" items={phases.avant} vide="Aucun élément daté avant le début." changerOnglet={changerOnglet} />
+                  <PhaseTimeline label="Pendant — en cours" items={phases.pendant} vide="Aucun élément daté sur la période en cours." changerOnglet={changerOnglet} />
+                  <PhaseTimeline label="Après — clôture" items={phases.apres} vide="Rien après le terme pour l’instant." changerOnglet={changerOnglet} />
                 </div>
                 <aside className="timeline-aside">
                   <div className="card p-3.5">
@@ -243,25 +251,17 @@ export default function FicheContrat() {
                     <p className="text-sm text-muted">Pendant : <strong className="text-ink">{phases.pendant.length}</strong></p>
                     <p className="text-sm text-muted">Après : <strong className="text-ink">{phases.apres.length}</strong></p>
                   </div>
-                  <div className="card p-3.5">
-                    <p className="text-xs font-bold uppercase tracking-widest text-faint">Voir en détail</p>
-                    <div className="mt-2 flex flex-col gap-1.5 text-sm">
-                      <button onClick={() => changerOnglet('engagements')} className="cursor-pointer text-left text-fuchsia hover:underline">Tous les engagements</button>
-                      <button onClick={() => changerOnglet('evenements')} className="cursor-pointer text-left text-fuchsia hover:underline">Journal des événements</button>
-                      <button onClick={() => changerOnglet('preuves')} className="cursor-pointer text-left text-fuchsia hover:underline">Chaîne de preuves</button>
-                    </div>
-                  </div>
                 </aside>
               </div>
             )}
           </div>
         </div>
       )}
-      {onglet === 'parties' && <OngletParties contratId={contrat.id} liens={d.contratParties} annuaire={d.parties} onChange={() => d.rechargerTable('parties')} />}
-      {onglet === 'clauses' && <OngletClauses contratId={contrat.id} clauses={d.clauses} onChange={() => d.rechargerTable('clauses')} />}
+
+      {onglet === 'relations' && <OngletRelations objetId={objet.id} relations={d.relations} annuaire={d.parties} onChange={() => d.rechargerTable('relations')} />}
       {onglet === 'engagements' && (
         <OngletEngagements
-          contratId={contrat.id} engagements={d.engagements} liens={d.contratParties}
+          objetId={objet.id} engagements={d.engagements} liens={liensAdapt}
           echeances={d.echeances} evenements={d.evenements} preuves={d.preuves}
           onChange={() => {
             d.rechargerTable('engagements');
@@ -271,61 +271,50 @@ export default function FicheContrat() {
           }}
         />
       )}
-      {onglet === 'evenements' && <OngletEvenements contratId={contrat.id} evenements={d.evenements} engagements={d.engagements} preuves={d.preuves} onChange={() => d.rechargerTable('evenements')} />}
-      {onglet === 'echeances' && <OngletEcheances contratId={contrat.id} echeances={d.echeances} engagements={d.engagements} devise={contrat.devise} onChange={() => d.rechargerTable('echeances')} />}
-      {onglet === 'preuves' && <OngletPreuves contratId={contrat.id} preuves={d.preuves} engagements={d.engagements} evenements={d.evenements} onChange={() => d.rechargerTable('preuves')} />}
+      {onglet === 'evenements' && <OngletEvenements objetId={objet.id} evenements={d.evenements} engagements={d.engagements} preuves={d.preuves} onChange={() => d.rechargerTable('evenements')} />}
+      {onglet === 'echeances' && <OngletEcheances objetId={objet.id} echeances={d.echeances} engagements={d.engagements} devise={objet.devise} onChange={() => d.rechargerTable('echeances')} />}
+      {onglet === 'preuves' && <OngletPreuves objetId={objet.id} preuves={d.preuves} engagements={d.engagements} evenements={d.evenements} onChange={() => d.rechargerTable('preuves')} />}
+      {onglet === 'donnees' && <OngletMetriques objetId={objet.id} metriques={d.metriques} onChange={() => d.rechargerTable('metriques')} />}
       {onglet === 'alertes' && (
-        <OngletAlertes contrat={contrat}
-          donnees={{ contrat, engagements: d.engagements, echeances: d.echeances, evenements: d.evenements, preuves: d.preuves, clauses: d.clauses, parties: d.contratParties, versions: d.versions }}
+        <OngletAlertes contrat={{ id: objet.id, pays: objet.pays, droit_applicable: objet.droit_applicable, devise: objet.devise, montant_total: objet.valeur_declaree, statut: objet.statut, date_debut: objet.date_debut, date_fin: objet.date_fin }}
+          donnees={{ contrat: { id: objet.id, pays: objet.pays, droit_applicable: objet.droit_applicable, devise: objet.devise, montant_total: objet.valeur_declaree, statut: objet.statut, date_debut: objet.date_debut, date_fin: objet.date_fin }, engagements: d.engagements, echeances: d.echeances, evenements: d.evenements, preuves: d.preuves, clauses: [], parties: [], versions: [], entiteRacine: 'objet' }}
           alertes={d.alertes}
-          onChange={() => { d.rechargerTable('alertes'); d.rechargerTable('actions'); d.rechargerTable('contrat'); }} />
+          onChange={() => { d.rechargerTable('alertes'); d.rechargerTable('actions'); d.rechargerTable('objet'); }} />
       )}
       {onglet === 'scenarios' && (
-        <OngletScenarios contratId={contrat.id} scenarios={d.scenarios}
-          ctx={{ engagements: d.engagements, echeances: d.echeances, evenements: d.evenements, clauses: d.clauses, preuves: d.preuves }}
-          droit={contrat.droit_applicable}
+        <OngletScenarios objetId={objet.id} scenarios={d.scenarios}
+          ctx={{ engagements: d.engagements, echeances: d.echeances, evenements: d.evenements, clauses: [], preuves: d.preuves }}
+          droit={objet.droit_applicable}
           onChange={() => { d.rechargerTable('scenarios'); d.rechargerTable('actions'); }} />
       )}
       {onglet === 'actions' && (
-        <OngletActions contratId={contrat.id} actions={d.actions} echeances={d.echeances} evenements={d.evenements} engagements={d.engagements}
-          dateFin={contrat.date_fin} statutContrat={contrat.statut} onChange={() => d.rechargerTable('actions')} />
+        <OngletActions objetId={objet.id} actions={d.actions} echeances={d.echeances} evenements={d.evenements} engagements={d.engagements}
+          dateFin={objet.date_fin} statutContrat={objet.statut || 'actif'} onChange={() => d.rechargerTable('actions')} />
       )}
-      {onglet === 'versions' && (
-        <OngletVersions contrat={contrat} versions={d.versions}
-          snapshot={{ clauses: d.clauses, engagements: d.engagements, echeances: d.echeances, evenements: d.evenements, preuves: d.preuves, parties: d.contratParties, alertes: d.alertes, actions: d.actions }}
-          historique={d.historique}
-          onChange={() => { d.rechargerTable('versions'); d.rechargerTable('contrat'); d.rechargerTable('historique'); }} />
-      )}
-      {onglet === 'dossier' && (
-        <OngletDossier contrat={contrat} liens={d.contratParties} clauses={d.clauses} engagements={d.engagements} echeances={d.echeances} evenements={d.evenements} preuves={d.preuves} versions={d.versions} alertes={d.alertes} />
-      )}
+      {onglet === 'decisions' && <OngletDecisions objetId={objet.id} decisions={d.decisions} onChange={() => d.rechargerTable('decisions')} />}
 
-      {/* Modal infos */}
       {modalInfo && (
-        <Modal large titre="Informations du contrat" sousTitre="Pays et droit applicable : essentiels pour contextualiser le suivi." onClose={() => setModalInfo(false)}>
+        <Modal large titre="Informations de l’objet" sousTitre="Pays et droit applicable : essentiels pour contextualiser le suivi." onClose={() => setModalInfo(false)}>
           <div className="space-y-4">
+            <Prudence compact />
             <Field label="Titre *"><input value={form.titre || ''} onChange={(e) => setForm({ ...form, titre: e.target.value })} className={inputCls} /></Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Statut">
                 <select value={form.statut || 'brouillon'} onChange={(e) => setForm({ ...form, statut: e.target.value })} className={inputCls + ' cursor-pointer'}>
-                  {['brouillon', 'actif', 'suspendu', 'termine', 'archive'].map((s) => <option key={s} value={s}>{statutContratLabel(s)}</option>)}
+                  {['brouillon', 'actif', 'suspendu', 'termine', 'archive'].map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </Field>
-              <Field label="Durée"><input value={form.duree || ''} onChange={(e) => setForm({ ...form, duree: e.target.value })} placeholder="Ex. : 12 mois" className={inputCls} /></Field>
+              <Field label="Valeur déclarée"><input value={form.valeur_declaree} onChange={(e) => setForm({ ...form, valeur_declaree: e.target.value })} inputMode="decimal" className={inputCls} /></Field>
             </div>
-            <Field label="Objet"><textarea value={form.objet || ''} onChange={(e) => setForm({ ...form, objet: e.target.value })} rows={2} className={inputCls} /></Field>
+            <Field label="Description"><textarea value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className={inputCls} /></Field>
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Pays"><input value={form.pays || ''} onChange={(e) => setForm({ ...form, pays: e.target.value })} className={inputCls} /></Field>
               <Field label="Droit applicable"><input value={form.droit_applicable || ''} onChange={(e) => setForm({ ...form, droit_applicable: e.target.value })} className={inputCls} /></Field>
-              <Field label="Ville"><input value={form.ville || ''} onChange={(e) => setForm({ ...form, ville: e.target.value })} className={inputCls} /></Field>
+              <Field label="Devise"><input value={form.devise || ''} onChange={(e) => setForm({ ...form, devise: e.target.value })} className={inputCls} /></Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Début"><input type="date" value={form.date_debut || ''} onChange={(e) => setForm({ ...form, date_debut: e.target.value })} className={inputCls} /></Field>
               <Field label="Fin"><input type="date" value={form.date_fin || ''} onChange={(e) => setForm({ ...form, date_fin: e.target.value })} className={inputCls} /></Field>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Montant total"><input value={form.montant_total} onChange={(e) => setForm({ ...form, montant_total: e.target.value })} inputMode="decimal" className={inputCls} /></Field>
-              <Field label="Devise"><input value={form.devise || ''} onChange={(e) => setForm({ ...form, devise: e.target.value })} className={inputCls} /></Field>
             </div>
             <Field label="Notes internes"><textarea value={form.notes || ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className={inputCls} /></Field>
             <div className="flex justify-end gap-2">
@@ -338,5 +327,3 @@ export default function FicheContrat() {
     </div>
   );
 }
-
-

@@ -1,14 +1,15 @@
 import { useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, ListTodo, Telescope, CheckCircle2, Circle } from 'lucide-react';
-import { api, logAction } from '../../lib/api';
+import { api, logActionAuto, parentRef } from '../../lib/api';
 import type { Action, Echeance, Engagement, Evenement } from '../../lib/types';
 import { anticiper } from '../../lib/scenarios';
 import { fmtDate } from '../../lib/format';
 import { Btn, Empty, Field, Modal, inputCls, useToast } from '../ui';
 
 // Actions + Anticipation : ce qu'il faut faire, et ce qui se prépare.
-export default function OngletActions({ contratId, actions, echeances, evenements, engagements, dateFin, statutContrat, onChange }: {
-  contratId: number;
+export default function OngletActions({ contratId, objetId, actions, echeances, evenements, engagements, dateFin, statutContrat, onChange }: {
+  contratId?: number;
+  objetId?: number;
   actions: Action[];
   echeances: Echeance[];
   evenements: Evenement[];
@@ -45,17 +46,17 @@ export default function OngletActions({ contratId, actions, echeances, evenement
     setBusy(true);
     try {
       const payload = {
-        contrat_id: contratId, titre: form.titre.trim(), description: form.description || null,
+        ...parentRef(contratId, objetId), titre: form.titre.trim(), description: form.description || null,
         priorite: form.priorite || 'normale', statut: form.statut || 'a_faire',
         echeance: form.echeance || null, responsable: form.responsable || null,
         alerte_id: edit?.alerte_id ?? null,
       };
       if (edit) {
         await api.actions.update(edit.id, payload);
-        await logAction(contratId, 'action_modifiee', 'action', edit.id, { titre: form.titre });
+        await logActionAuto(contratId, objetId, 'action_modifiee', 'action', edit.id, { titre: form.titre });
       } else {
         const c = await api.actions.create(payload);
-        await logAction(contratId, 'action_creee', 'action', c.id, { titre: form.titre });
+        await logActionAuto(contratId, objetId, 'action_creee', 'action', c.id, { titre: form.titre });
       }
       setModal(false);
       onChange();
@@ -66,7 +67,7 @@ export default function OngletActions({ contratId, actions, echeances, evenement
   const statut = async (a: Action, s: string) => {
     try {
       await api.actions.update(a.id, { statut: s });
-      await logAction(contratId, 'action_statut', 'action', a.id, { de: a.statut, vers: s });
+      await logActionAuto(contratId, objetId, 'action_statut', 'action', a.id, { de: a.statut, vers: s });
       onChange();
     } catch (e: any) { err(e.message); }
   };
@@ -75,7 +76,7 @@ export default function OngletActions({ contratId, actions, echeances, evenement
     if (!confirm(`Supprimer l’action « ${a.titre} » ?`)) return;
     try {
       await api.actions.remove(a.id);
-      await logAction(contratId, 'action_supprimee', 'action', a.id, { titre: a.titre });
+      await logActionAuto(contratId, objetId, 'action_supprimee', 'action', a.id, { titre: a.titre });
       onChange();
       ok('Action supprimée.');
     } catch (e: any) { err(e.message); }

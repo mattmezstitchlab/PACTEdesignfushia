@@ -23,6 +23,16 @@ export const RESOURCE_TABLES = {
   versions: { order: 'id', asc: false },
   historique: { order: 'id', asc: false },
   modeles: {},
+  // ---- Moteur universel (Objets/Relations/Données/Décisions) ----
+  // Mêmes primitives CRUD génériques, aucune logique dupliquée : le
+  // contrat reste un cas particulier de l'objet universel, les tables
+  // ci-dessus (engagements, echeances, evenements, preuves, alertes,
+  // actions, scenarios, versions, historique) sont réutilisées telles
+  // quelles pour les objets via leur colonne `objet_id`.
+  objets: { order: 'id', asc: false, touch: true },
+  relations: { order: 'id', asc: false },
+  metriques: { order: 'id', asc: false },
+  decisions: { order: 'id', asc: false },
 };
 
 export function isKnownResource(table) {

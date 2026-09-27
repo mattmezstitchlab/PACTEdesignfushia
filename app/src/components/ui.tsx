@@ -137,5 +137,25 @@ export function useToast() {
   return { toastEl: el, ok: (msg: string) => setToast({ type: 'ok', msg }), err: (msg: string) => setToast({ type: 'err', msg }) };
 }
 
+// Mini-statistique cliquable + ligne d'état — utilisées par les fiches
+// contrat et objet pour l'aperçu (« état du dossier »).
+export function MiniStat({ n, l, o, go }: { n: number; l: string; o: string; go: (o: string) => void }) {
+  return (
+    <button onClick={() => go(o)} className="cursor-pointer mini-stat p-3 text-center transition hover:bg-white">
+      <p className="font-display text-2xl font-bold text-ink">{n}</p>
+      <p className="text-[11px] uppercase tracking-wider text-muted">{l}</p>
+    </button>
+  );
+}
+
+export function LigneEtat({ label, valeur, alerte }: { label: string; valeur: string; alerte?: boolean }) {
+  return (
+    <div className="flex items-center justify-between card px-3 py-2">
+      <span className="text-muted">{label}</span>
+      <strong className={alerte ? 'text-fuchsia' : 'text-ink'}>{valeur}</strong>
+    </div>
+  );
+}
+
 export { AlertTriangle, ArrowRight, BadgeCheck, Bell, CalendarClock, Check, ChevronRight, FileText, Landmark, Plus, Scale, ShieldAlert, Sparkles, Upload, Users, Info, FilePlus2, Search };
 export { Link };

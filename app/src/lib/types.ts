@@ -72,7 +72,8 @@ export interface Clause {
 
 export interface Engagement {
   id: number;
-  contrat_id: number;
+  contrat_id: number | null;
+  objet_id: number | null;
   titre: string;
   description: string | null;
   qui_partie_id: number | null;
@@ -93,7 +94,8 @@ export interface Engagement {
 
 export interface Echeance {
   id: number;
-  contrat_id: number;
+  contrat_id: number | null;
+  objet_id: number | null;
   engagement_id: number | null;
   titre: string | null;
   type: string | null;
@@ -107,7 +109,8 @@ export interface Echeance {
 
 export interface Evenement {
   id: number;
-  contrat_id: number;
+  contrat_id: number | null;
+  objet_id: number | null;
   type: string | null;
   titre: string | null;
   description: string | null;
@@ -120,7 +123,8 @@ export interface Evenement {
 
 export interface Preuve {
   id: number;
-  contrat_id: number;
+  contrat_id: number | null;
+  objet_id: number | null;
   titre: string | null;
   type: string | null;
   description: string | null;
@@ -136,7 +140,8 @@ export interface Preuve {
 
 export interface Alerte {
   id: number;
-  contrat_id: number;
+  contrat_id: number | null;
+  objet_id: number | null;
   code: string | null;
   gravite: string | null;
   titre: string | null;
@@ -150,7 +155,8 @@ export interface Alerte {
 
 export interface Action {
   id: number;
-  contrat_id: number;
+  contrat_id: number | null;
+  objet_id: number | null;
   titre: string | null;
   description: string | null;
   priorite: string | null;
@@ -165,6 +171,7 @@ export interface Action {
 export interface Scenario {
   id: number;
   contrat_id: number | null;
+  objet_id: number | null;
   nom: string | null;
   declencheur: string | null;
   declencheur_type: string | null;
@@ -179,7 +186,8 @@ export interface Scenario {
 
 export interface Version {
   id: number;
-  contrat_id: number;
+  contrat_id: number | null;
+  objet_id: number | null;
   numero: number | null;
   titre: string | null;
   resume: string | null;
@@ -191,6 +199,7 @@ export interface Version {
 export interface Historique {
   id: number;
   contrat_id: number | null;
+  objet_id: number | null;
   acteur: string | null;
   action: string | null;
   entite_type: string | null;
@@ -198,6 +207,7 @@ export interface Historique {
   details: any;
   created_at: string;
 }
+
 
 export interface Modele {
   id: number;
@@ -209,6 +219,104 @@ export interface Modele {
   donnees: any;
   created_at: string;
 }
+
+// ============================================================
+// MOTEUR UNIVERSEL — PACTE ne gère pas que des contrats : il structure
+// ce qui relie personnes, organisations, objets, projets, engagements,
+// événements, documents, valeurs et décisions dans le temps.
+// Le contrat (ci-dessus) reste un cas particulier de l'OBJET universel ;
+// les mêmes briques (Engagement/Échéance/Événement/Preuve/Alerte/
+// Scénario/Version/Historique) sont réutilisées telles quelles — elles
+// portent désormais soit contrat_id, soit objet_id, jamais les deux à
+// la fois. Aucune table ni logique n'est dupliquée.
+// ============================================================
+
+// OBJET — ce que le moteur suit dans le temps quand ce n'est pas un
+// contrat au sens strict : projet, œuvre, actif, bien, mission, dossier,
+// carrière, portefeuille… Le champ `univers` ne fait que configurer les
+// libellés/suggestions ; il ne détermine jamais l'architecture.
+export interface Objet {
+  id: number;
+  univers: string;
+  type_objet: string;
+  titre: string;
+  description: string | null;
+  statut: string | null;
+  pays: string | null;
+  droit_applicable: string | null;
+  devise: string | null;
+  valeur_declaree: number | null;
+  date_debut: string | null;
+  date_fin: string | null;
+  notes: string | null;
+  sante: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// RELATION — ce qui relie une entité (personne/organisation, via la
+// table `parties` déjà existante — aucune identité n'est recréée) à un
+// objet, un contrat, ou une autre entité : propriété, participation,
+// collaboration, représentation, prestation, partenariat, responsabilité,
+// utilisation, licence… Le rôle appartient à la relation, pas à l'identité.
+export interface Relation {
+  id: number;
+  type_relation: string;
+  role: string | null;
+  partie_id: number | null;
+  objet_id: number | null;
+  contrat_id: number | null;
+  autre_partie_id: number | null;
+  date_debut: string | null;
+  date_fin: string | null;
+  statut: string | null;
+  notes: string | null;
+  created_at: string;
+  partie?: Partie;
+  autre_partie?: Partie;
+}
+
+// DONNÉE — valeur, mesure, montant, quantité, date, état, indicateur
+// observé pour un objet ou un contrat. Toujours daté et sourcé ; jamais
+// présenté comme une prédiction (voir lib/analyseValeur.ts).
+export interface Metrique {
+  id: number;
+  objet_id: number | null;
+  contrat_id: number | null;
+  libelle: string;
+  valeur: number | null;
+  unite: string | null;
+  date_mesure: string | null;
+  source: string | null;
+  statut: string | null; // declaree | documentee | confirmee | a_verifier
+  notes: string | null;
+  created_at: string;
+}
+
+// DÉCISION — ce que l'humain décide finalement, distinct de toute
+// suggestion, simulation ou analyse IA. Toujours horodatée et rattachée
+// à ce qui a éclairé la décision (analyses, scénarios, alertes).
+export interface Decision {
+  id: number;
+  objet_id: number | null;
+  contrat_id: number | null;
+  titre: string;
+  description: string | null;
+  decideur: string | null;
+  fondee_sur: string | null;
+  date_decision: string;
+  created_at: string;
+}
+
+export const TYPES_RELATION = [
+  'propriete', 'participation', 'collaboration', 'representation', 'prestation',
+  'partenariat', 'responsabilite', 'utilisation', 'licence', 'autre',
+];
+
+export const TYPES_OBJET = [
+  'projet', 'oeuvre', 'actif', 'bien', 'mission', 'dossier', 'carriere', 'portefeuille', 'autre',
+];
+
 
 // ---- Types dérivés (moteurs) ----
 
@@ -263,6 +371,20 @@ export interface AnalyseDocument {
   clauses_proposees: { categorie: string; titre: string; contenu: string; extrait: string }[];
   points_vigilance: string[];
   score_confiance: string;
+}
+
+// ANALYSE DE VALEUR — jamais « valeur future = X ». Toujours :
+// valeur observée + données + évolution + facteurs + scénarios + incertitude.
+export interface AnalyseValeur {
+  valeur_observee: number | null;
+  devise: string | null;
+  date_observation: string | null;
+  nb_mesures: number;
+  evolution: { date: string; valeur: number }[];
+  variation_pct: number | null;
+  facteurs: string[];
+  donnees_manquantes: string[];
+  incertitude: string;
 }
 
 export const CATEGORIES_CLAUSES = [

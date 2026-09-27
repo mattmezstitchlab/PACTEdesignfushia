@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, CalendarClock, CheckCircle2 } from 'lucide-react';
-import { api, logAction } from '../../lib/api';
+import { api, logActionAuto, parentRef } from '../../lib/api';
 import type { Echeance, Engagement } from '../../lib/types';
 import { fmtDate, fmtMontant, joursRestants, delaiHumain } from '../../lib/format';
 import { Btn, Empty, Field, Modal, inputCls, useToast } from '../ui';
 
 // Échéances : paiements, livraisons, validations, renouvellements, fins.
-export default function OngletEcheances({ contratId, echeances, engagements, devise, onChange }: {
-  contratId: number;
+export default function OngletEcheances({ contratId, objetId, echeances, engagements, devise, onChange }: {
+  contratId?: number;
+  objetId?: number;
   echeances: Echeance[];
   engagements: Engagement[];
   devise: string | null;
@@ -35,7 +36,7 @@ export default function OngletEcheances({ contratId, echeances, engagements, dev
     setBusy(true);
     try {
       const payload = {
-        contrat_id: contratId, titre: form.titre.trim(), type: form.type || 'autre',
+        ...parentRef(contratId, objetId), titre: form.titre.trim(), type: form.type || 'autre',
         date_limite: form.date_limite || null,
         montant: form.montant === '' ? null : Number(String(form.montant).replace(',', '.')) || null,
         devise: form.dev || 'EUR', statut: form.statut || 'a_venir',
@@ -44,10 +45,10 @@ export default function OngletEcheances({ contratId, echeances, engagements, dev
       };
       if (edit) {
         await api.echeances.update(edit.id, payload);
-        await logAction(contratId, 'echeance_modifiee', 'echeance', edit.id, { titre: form.titre });
+        await logActionAuto(contratId, objetId, 'echeance_modifiee', 'echeance', edit.id, { titre: form.titre });
       } else {
         const c = await api.echeances.create(payload);
-        await logAction(contratId, 'echeance_creee', 'echeance', c.id, { titre: form.titre });
+        await logActionAuto(contratId, objetId, 'echeance_creee', 'echeance', c.id, { titre: form.titre });
       }
       setModal(false);
       onChange();
@@ -58,7 +59,7 @@ export default function OngletEcheances({ contratId, echeances, engagements, dev
   const marquer = async (e: Echeance, statut: string) => {
     try {
       await api.echeances.update(e.id, { statut });
-      await logAction(contratId, 'echeance_statut', 'echeance', e.id, { de: e.statut, vers: statut });
+      await logActionAuto(contratId, objetId, 'echeance_statut', 'echeance', e.id, { de: e.statut, vers: statut });
       onChange();
     } catch (e2: any) { err(e2.message); }
   };
@@ -67,7 +68,7 @@ export default function OngletEcheances({ contratId, echeances, engagements, dev
     if (!confirm(`Supprimer l’échéance « ${e.titre} » ?`)) return;
     try {
       await api.echeances.remove(e.id);
-      await logAction(contratId, 'echeance_supprimee', 'echeance', e.id, { titre: e.titre });
+      await logActionAuto(contratId, objetId, 'echeance_supprimee', 'echeance', e.id, { titre: e.titre });
       onChange();
       ok('Échéance supprimée.');
     } catch (e2: any) { err(e2.message); }

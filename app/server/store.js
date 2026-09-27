@@ -46,6 +46,8 @@ function emptyDb() {
     contrats: [], parties: [], contrat_parties: [], clauses: [], engagements: [],
     echeances: [], evenements: [], preuves: [], alertes: [], actions: [],
     scenarios: [], versions: [], historique: [], modeles: [],
+    // Moteur universel — voir server/handlers.js pour le détail.
+    objets: [], relations: [], metriques: [], decisions: [],
     _seq: {},
   };
 }

@@ -4,6 +4,7 @@
 import type {
   Contrat, Partie, ContratPartie, Clause, Engagement, Echeance,
   Evenement, Preuve, Alerte, Action, Scenario, Version, Historique, Modele,
+  Objet, Relation, Metrique, Decision,
 } from './types';
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
@@ -52,6 +53,11 @@ export const api = {
   versions: crud<Version>('/api/versions'),
   historique: crud<Historique>('/api/historique'),
   modeles: crud<Modele>('/api/modeles'),
+  // ---- Moteur universel : mêmes primitives, aucune duplication ----
+  objets: crud<Objet>('/api/objets'),
+  relations: crud<Relation>('/api/relations'),
+  metriques: crud<Metrique>('/api/metriques'),
+  decisions: crud<Decision>('/api/decisions'),
   upload: (fileName: string, fileBase64: string, contentType: string) =>
     req<{ url: string; path: string }>('/api/upload', {
       method: 'POST',
@@ -60,6 +66,28 @@ export const api = {
 };
 
 // Journalisation systématique : chaque mutation importante laisse une trace.
+// Une seule implémentation (`_logAction`) ; `logAction` (contrats) et
+// `logActionObjet` (moteur universel) n'en sont que deux entrées, pour ne
+// jamais changer la signature historique utilisée dans tout ContractOS.
+async function _logAction(row: {
+  contrat_id: number | null; objet_id: number | null; action: string;
+  entite_type?: string; entite_id?: number | null; details?: any; acteur?: string;
+}): Promise<void> {
+  try {
+    await api.historique.create({
+      contrat_id: row.contrat_id,
+      objet_id: row.objet_id,
+      acteur: row.acteur || 'Utilisateur',
+      action: row.action,
+      entite_type: row.entite_type || null,
+      entite_id: row.entite_id ?? null,
+      details: row.details || null,
+    });
+  } catch (e) {
+    console.warn('[pacte] historique non enregistré:', e);
+  }
+}
+
 export async function logAction(
   contrat_id: number | null,
   action: string,
@@ -68,18 +96,36 @@ export async function logAction(
   details?: any,
   acteur = 'Utilisateur',
 ): Promise<void> {
-  try {
-    await api.historique.create({
-      contrat_id,
-      acteur,
-      action,
-      entite_type: entite_type || null,
-      entite_id: entite_id ?? null,
-      details: details || null,
-    });
-  } catch (e) {
-    console.warn('[pacte] historique non enregistré:', e);
-  }
+  return _logAction({ contrat_id, objet_id: null, action, entite_type, entite_id, details, acteur });
+}
+
+// Petits adaptateurs partagés par les composants d'onglet réutilisés à
+// la fois par un contrat et par un objet du moteur universel — une
+// ligne appartient toujours à l'un OU à l'autre, jamais aux deux.
+export function parentRef(contratId?: number | null, objetId?: number | null): { contrat_id: number | null; objet_id: number | null } {
+  return { contrat_id: contratId ?? null, objet_id: objetId ?? null };
+}
+
+export async function logActionAuto(
+  contratId: number | null | undefined,
+  objetId: number | null | undefined,
+  action: string,
+  entite_type?: string,
+  entite_id?: number | null,
+  details?: any,
+): Promise<void> {
+  return _logAction({ contrat_id: contratId ?? null, objet_id: objetId ?? null, action, entite_type, entite_id, details });
+}
+
+export async function logActionObjet(
+  objet_id: number | null,
+  action: string,
+  entite_type?: string,
+  entite_id?: number | null,
+  details?: any,
+  acteur = 'Utilisateur',
+): Promise<void> {
+  return _logAction({ contrat_id: null, objet_id, action, entite_type, entite_id, details, acteur });
 }
 
 export function fichierVersBase64(f: File): Promise<string> {

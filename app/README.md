@@ -1,73 +1,50 @@
-# React + TypeScript + Vite
+# PACTE — moteur universel de pactes et contrats vivants
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PACTE unifie **PACTEdesignfushia** (identité visuelle éditoriale : noir / blanc /
+ivoire + fuchsia), **PACTEcontractos** (modèle de données ContractOS) et
+l'ancien PACTE (fonctionnalités historiques utiles) en **une seule application**.
 
-Currently, two official plugins are available:
+## Ce que fait PACTE
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Un moteur unique**, pas trois applications : IDENTITÉ (annuaire des
+  parties) → RELATION → ENGAGEMENT → CONDITIONS → ÉVÉNEMENT → ÉCHÉANCE →
+  PREUVE → ALERTE → ACTION → HISTORIQUE → DOSSIER.
+- **Le contrat** (`Contrat` + `ContratPartie` + `Clause`) est le cas
+  particulier historique de ce moteur, entièrement conservé et non modifié
+  dans son fonctionnement.
+- **L'Objet** (`Objet` + `Relation` + `Metrique` + `Decision`) est le cas
+  général : projet, œuvre, actif, bien, mission, dossier… — pour tout ce qui
+  n'est pas structuré comme un contrat mais mérite le même suivi (relations,
+  engagements, échéances, événements, preuves, alertes, scénarios).
+- **Univers** (`src/lib/univers.ts`) : 19 configurations du même moteur
+  (Personnel, Professionnel, Entreprise, Projets, Spectacle & intermittence,
+  Art, Musique, Audiovisuel, Propriété intellectuelle, Immobilier, Biens &
+  actifs, Commerce, Associations, Recherche, Formation & carrière, Voyage,
+  Assurance, Financement, Finance & marchés). Un univers ne fait que suggérer
+  des libellés et des types d'objets : il ne détermine jamais l'architecture.
+- **Timeline** (`src/components/timeline/Timeline.tsx`) : système unique
+  AVANT / PENDANT / APRÈS, réutilisé par le contrat et par l'objet.
+- **IA copilote uniquement** : extraire, résumer, structurer, comparer,
+  classer, expliquer, proposer, simuler — jamais inventer un fait, une preuve,
+  une loi ou une décision à la place de l'utilisateur.
 
-## React Compiler
+## Développement
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev      # front + API locale (fichier JSON, server/vitePlugin.js)
+npm run build    # tsc -b && vite build
+npm run start     # sert le build de production (server/main.js)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Le backend de développement est un petit serveur générique
+(`server/handlers.js`, `server/store.js`) qui persiste dans
+`server/data/db.json` (ignoré par git). Le même contrat REST est prévu pour
+être adossé à Supabase en production (`src/lib/api.ts`).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Positionnement
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+PACTE peut **montrer / structurer / relier / vérifier / signaler / analyser /
+simuler / anticiper**. Il ne peut jamais **arbitrer, condamner, garantir,
+manipuler ou décider à la place de l'utilisateur**. Toute information
+juridique non vérifiée est signalée comme telle.

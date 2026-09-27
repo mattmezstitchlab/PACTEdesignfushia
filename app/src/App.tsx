@@ -4,6 +4,10 @@ import Dashboard from './pages/Dashboard';
 import Contrats from './pages/Contrats';
 import FicheContrat from './pages/FicheContrat';
 import Nouveau from './pages/Nouveau';
+import Univers from './pages/Univers';
+import Objets from './pages/Objets';
+import NouvelObjet from './pages/NouvelObjet';
+import FicheObjet from './pages/FicheObjet';
 import Parties from './pages/Parties';
 import Modeles from './pages/Modeles';
 import Evenements from './pages/Evenements';
@@ -21,6 +25,10 @@ export default function App() {
           <Route path="/contrats" element={<Contrats />} />
           <Route path="/contrats/:id" element={<FicheContrat />} />
           <Route path="/nouveau" element={<Nouveau />} />
+          <Route path="/univers" element={<Univers />} />
+          <Route path="/objets" element={<Objets />} />
+          <Route path="/objets/nouveau" element={<NouvelObjet />} />
+          <Route path="/objets/:id" element={<FicheObjet />} />
           <Route path="/parties" element={<Parties />} />
           <Route path="/modeles" element={<Modeles />} />
           <Route path="/evenements" element={<Evenements />} />

@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Pencil, Trash2, FlaskConical, CheckCircle2, FileText, Paperclip, ListChecks, ArrowRight } from 'lucide-react';
-import { api, logAction } from '../../lib/api';
+import { api, logActionAuto, parentRef } from '../../lib/api';
 import type { Clause, Echeance, Engagement, Evenement, Preuve, Scenario } from '../../lib/types';
 import { evaluerScenario, scenariosParDefaut } from '../../lib/scenarios';
 import { Btn, Empty, Field, Modal, Prudence, inputCls, useToast } from '../ui';
 
 // Moteur de scénarios : SI événement X → vérifier condition Y →
 // engagements concernés → clauses → preuves → actions possibles.
-export default function OngletScenarios({ contratId, scenarios, ctx, droit, onChange }: {
-  contratId: number;
+export default function OngletScenarios({ contratId, objetId, scenarios, ctx, droit, onChange }: {
+  contratId?: number;
+  objetId?: number;
   scenarios: Scenario[];
   ctx: { engagements: Engagement[]; echeances: Echeance[]; evenements: Evenement[]; clauses: Clause[]; preuves: Preuve[] };
   droit: string | null;
@@ -57,17 +58,17 @@ export default function OngletScenarios({ contratId, scenarios, ctx, droit, onCh
     setBusy(true);
     try {
       const payload = {
-        contrat_id: contratId, nom: form.nom.trim(), declencheur: form.declencheur.trim(),
+        ...parentRef(contratId, objetId), nom: form.nom.trim(), declencheur: form.declencheur.trim(),
         declencheur_type: form.declencheur_type || null, condition_verif: form.condition_verif || null,
         clauses_mots_cles: form.clauses_mots_cles || null, actions_suggerees: form.actions_suggerees || null,
         note_prudence: form.note_prudence || null, actif: form.actif !== false,
       };
       if (edit) {
         await api.scenarios.update(edit.id, payload);
-        await logAction(contratId, 'scenario_modifie', 'scenario', edit.id, { nom: form.nom });
+        await logActionAuto(contratId, objetId, 'scenario_modifie', 'scenario', edit.id, { nom: form.nom });
       } else {
         const c = await api.scenarios.create(payload);
-        await logAction(contratId, 'scenario_cree', 'scenario', c.id, { nom: form.nom });
+        await logActionAuto(contratId, objetId, 'scenario_cree', 'scenario', c.id, { nom: form.nom });
       }
       setModal(false);
       onChange();
@@ -78,8 +79,8 @@ export default function OngletScenarios({ contratId, scenarios, ctx, droit, onCh
   const chargerDefaut = async () => {
     setBusy(true);
     try {
-      for (const s of scenariosParDefaut(contratId)) await api.scenarios.create(s);
-      await logAction(contratId, 'scenarios_defaut', 'contrat', contratId, {});
+      for (const s of scenariosParDefaut({ contrat_id: contratId, objet_id: objetId })) await api.scenarios.create(s);
+      await logActionAuto(contratId, objetId, 'scenarios_defaut', objetId ? 'objet' : 'contrat', (contratId ?? objetId)!, {});
       onChange();
       ok('Scénarios types chargés — adaptez-les à votre contrat.');
     } catch (e: any) { err(e.message); } finally { setBusy(false); }
@@ -90,7 +91,7 @@ export default function OngletScenarios({ contratId, scenarios, ctx, droit, onCh
     try {
       await api.scenarios.remove(s.id);
       if (selectionne === s.id) setSelectionne(null);
-      await logAction(contratId, 'scenario_supprime', 'scenario', s.id, { nom: s.nom });
+      await logActionAuto(contratId, objetId, 'scenario_supprime', 'scenario', s.id, { nom: s.nom });
       onChange();
       ok('Scénario supprimé.');
     } catch (e: any) { err(e.message); }
@@ -98,8 +99,8 @@ export default function OngletScenarios({ contratId, scenarios, ctx, droit, onCh
 
   const versAction = async (texte: string) => {
     try {
-      await api.actions.create({ contrat_id: contratId, titre: texte.slice(0, 140), description: `Issue du scénario « ${scenarios.find((s) => s.id === selectionne)?.nom} ».`, priorite: 'normale', statut: 'a_faire' });
-      await logAction(contratId, 'action_creee', 'contrat', contratId, { depuis_scenario: selectionne });
+      await api.actions.create({ ...parentRef(contratId, objetId), titre: texte.slice(0, 140), description: `Issue du scénario « ${scenarios.find((s) => s.id === selectionne)?.nom} ».`, priorite: 'normale', statut: 'a_faire' });
+      await logActionAuto(contratId, objetId, 'action_creee', objetId ? 'objet' : 'contrat', (contratId ?? objetId)!, { depuis_scenario: selectionne });
       onChange();
       ok('Action créée — retrouvez-la dans l’onglet Actions.');
     } catch (e: any) { err(e.message); }

@@ -137,13 +137,15 @@ export function evaluerScenario(s: Scenario, ctx: ContexteScenario): EvaluationS
   };
 }
 
-// ---- Scénarios prêts à l'emploi (universels, adaptables par contrat) ----
-export function scenariosParDefaut(contratId: number | null): Omit<Scenario, 'id' | 'created_at'>[] {
+// ---- Scénarios prêts à l'emploi (universels, adaptables à tout contrat
+// ou objet — même moteur, même liste, seule la clé de rattachement change) ----
+export function scenariosParDefaut(parent: { contrat_id?: number | null; objet_id?: number | null }): Omit<Scenario, 'id' | 'created_at'>[] {
   const base = (
     nom: string, declencheur: string, declencheur_type: string | null,
     condition_verif: string, clauses_mots_cles: string, actions_suggerees: string, note_prudence: string,
   ): Omit<Scenario, 'id' | 'created_at'> => ({
-    contrat_id: contratId,
+    contrat_id: parent.contrat_id ?? null,
+    objet_id: parent.objet_id ?? null,
     nom, declencheur, declencheur_type, condition_verif,
     engagements_cibles: null, clauses_mots_cles, actions_suggerees,
     note_prudence, actif: true,

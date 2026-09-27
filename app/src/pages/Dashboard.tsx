@@ -2,15 +2,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, AlertTriangle, CalendarClock, Plus,
-  ArrowRight, ShieldAlert, BadgeCheck, Activity, Scale, Sparkles,
+  ArrowRight, ShieldAlert, BadgeCheck, Activity, Scale, Sparkles, Globe2,
 } from 'lucide-react';
 import { api } from '../lib/api';
-import type { Contrat, Echeance, Alerte, Evenement } from '../lib/types';
+import type { Contrat, Echeance, Alerte, Evenement, Objet } from '../lib/types';
 import { fmtDate, fmtMontant, joursRestants, delaiHumain } from '../lib/format';
 import { Spinner, BadgeSante, BadgeStatut, Prudence, SectionTitre, Btn } from '../components/ui';
 
 export default function Dashboard() {
   const [contrats, setContrats] = useState<Contrat[]>([]);
+  const [objets, setObjets] = useState<Objet[]>([]);
   const [echeances, setEcheances] = useState<Echeance[]>([]);
   const [alertes, setAlertes] = useState<Alerte[]>([]);
   const [evenements, setEvenements] = useState<Evenement[]>([]);
@@ -20,13 +21,18 @@ export default function Dashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const [c, e, a, evs] = await Promise.all([
+        // Échéances, alertes et événements sont désormais communs aux
+        // contrats et aux objets du moteur universel (une même table,
+        // rattachée soit à contrat_id, soit à objet_id).
+        const [c, o, e, a, evs] = await Promise.all([
           api.contrats.list(),
+          api.objets.list(),
           api.echeances.list(),
           api.alertes.list({ statut: 'active' }),
           api.evenements.list(),
         ]);
         setContrats(c);
+        setObjets(o);
         setEcheances(e);
         setAlertes(a);
         setEvenements(evs.slice(0, 6));
@@ -37,6 +43,13 @@ export default function Dashboard() {
       }
     })();
   }, []);
+
+  const nomEntite = (x: { contrat_id: number | null; objet_id: number | null }) => x.contrat_id
+    ? (contrats.find((c) => c.id === x.contrat_id)?.titre || `Contrat #${x.contrat_id}`)
+    : (objets.find((o) => o.id === x.objet_id)?.titre || `Objet #${x.objet_id}`);
+  const lienEntite = (x: { contrat_id: number | null; objet_id: number | null }, onglet: string) => x.contrat_id
+    ? `/contrats/${x.contrat_id}?onglet=${onglet}`
+    : `/objets/${x.objet_id}?onglet=${onglet}`;
 
   const stats = useMemo(() => {
     const actifs = contrats.filter((c) => c.statut === 'actif').length;
@@ -54,7 +67,6 @@ export default function Dashboard() {
       .slice(0, 6);
   }, [echeances]);
 
-  const nomContrat = (id: number) => contrats.find((c) => c.id === id)?.titre || `Contrat #${id}`;
 
   if (loading) return <Spinner label="Ouverture du centre de pilotage…" />;
   if (erreur) return (
@@ -74,16 +86,17 @@ export default function Dashboard() {
         <h1>Chaque pacte est un <em>organisme vivant</em>.</h1>
         <p>
           CONTRAT → PARTIES → ENGAGEMENTS → CONDITIONS → ÉVÉNEMENTS → ÉCHÉANCES → PREUVES → ALERTES →
-          ACTIONS → HISTORIQUE → DOSSIER. Suivez ce qui a été promis, ce qui se passe et ce qui reste à prouver —
-          quel que soit le type d'accord.
+          ACTIONS → HISTORIQUE → DOSSIER. Le même moteur relie aussi vos projets, œuvres, actifs et carrières —
+          quel que soit l'univers, ce qui a été promis, ce qui se passe et ce qui reste à prouver reste traçable.
         </p>
         <div className="hero-actions">
           <Link to="/nouveau"><Btn><Plus className="h-4 w-4" /> Nouveau pacte</Btn></Link>
           <Link to="/nouveau?mode=situation"><Btn variant="soft"><Sparkles className="h-4 w-4" /> Il vient de se passer quelque chose</Btn></Link>
+          <Link to="/univers"><Btn variant="ghost"><Globe2 className="h-4 w-4" /> Explorer les univers</Btn></Link>
         </div>
         <div className="hero-stats">
           <Stat chiffre={String(stats.total)} label="Contrats" />
-          <Stat chiffre={String(stats.actifs)} label="Actifs" accent="success" />
+          <Stat chiffre={String(objets.length)} label="Objets suivis" />
           <Stat chiffre={String(stats.attention)} label="À surveiller" accent="attention" />
           <Stat chiffre={String(stats.critiques)} label="Critiques" accent="critique" />
         </div>
@@ -144,12 +157,12 @@ export default function Dashboard() {
           <div className="space-y-2.5">
             {prochaines.length === 0 && <p className="card p-5 text-sm text-muted">Aucune échéance à venir. Ajoutez des échéances à vos contrats pour les voir ici.</p>}
             {prochaines.map((e) => (
-              <Link key={e.id} to={`/contrats/${e.contrat_id}?onglet=echeances`} className="block card p-3.5 transition hover:border-fuchsia-300">
+              <Link key={e.id} to={lienEntite(e, 'echeances')} className="block card p-3.5 transition hover:border-fuchsia-300">
                 <div className="flex items-center justify-between gap-2">
                   <p className="truncate text-sm font-medium text-ink">{e.titre || 'Échéance'}</p>
                   <Delai j={e.j} />
                 </div>
-                <p className="mt-1 truncate text-xs text-faint">{nomContrat(e.contrat_id)} · {fmtDate(e.date_limite)}{e.montant ? ` · ${fmtMontant(e.montant, e.devise || 'EUR')}` : ''}</p>
+                <p className="mt-1 truncate text-xs text-faint">{nomEntite(e)} · {fmtDate(e.date_limite)}{e.montant ? ` · ${fmtMontant(e.montant, e.devise || 'EUR')}` : ''}</p>
               </Link>
             ))}
           </div>
@@ -172,14 +185,14 @@ export default function Dashboard() {
               </div>
             )}
             {alertes.slice(0, 4).map((a) => (
-              <Link key={a.id} to={`/contrats/${a.contrat_id}?onglet=alertes`} className="block card p-3.5 transition hover:border-fuchsia-300">
+              <Link key={a.id} to={lienEntite(a, 'alertes')} className="block card p-3.5 transition hover:border-fuchsia-300">
                 <div className="flex items-center gap-2">
                   {a.gravite === 'critique'
                     ? <ShieldAlert className="h-4 w-4 shrink-0 text-critique" />
                     : <AlertTriangle className="h-4 w-4 shrink-0 text-fuchsia" />}
                   <p className="truncate text-sm font-medium text-ink">{a.titre}</p>
                 </div>
-                <p className="mt-1 truncate text-xs text-faint">{nomContrat(a.contrat_id)}</p>
+                <p className="mt-1 truncate text-xs text-faint">{nomEntite(a)}</p>
               </Link>
             ))}
           </div>
@@ -194,9 +207,9 @@ export default function Dashboard() {
           <div className="space-y-2.5">
             {evenements.length === 0 && <p className="card p-5 text-sm text-muted">Aucun événement enregistré pour l’instant.</p>}
             {evenements.map((ev) => (
-              <Link key={ev.id} to={`/contrats/${ev.contrat_id}?onglet=evenements`} className="block card p-3.5 transition hover:border-fuchsia-300">
+              <Link key={ev.id} to={lienEntite(ev, 'evenements')} className="block card p-3.5 transition hover:border-fuchsia-300">
                 <p className="truncate text-sm font-medium text-ink">{ev.titre || 'Événement'}</p>
-                <p className="mt-1 truncate text-xs text-faint">{nomContrat(ev.contrat_id)} · {fmtDate(ev.date_evenement || ev.created_at, true)}{ev.auteur ? ` · ${ev.auteur}` : ''}</p>
+                <p className="mt-1 truncate text-xs text-faint">{nomEntite(ev)} · {fmtDate(ev.date_evenement || ev.created_at, true)}{ev.auteur ? ` · ${ev.auteur}` : ''}</p>
               </Link>
             ))}
           </div>

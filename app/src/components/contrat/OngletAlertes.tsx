@@ -1,20 +1,24 @@
 import { useMemo, useState } from 'react';
 import { ShieldAlert, AlertTriangle, Info, RefreshCw, Check, Plus, Eye, XCircle } from 'lucide-react';
-import { api, logAction } from '../../lib/api';
-import type { AlerteCalculee, Contrat } from '../../lib/types';
-import { moteurCoherence, santeGlobale, type DonneesCoherence } from '../../lib/coherence';
+import { api, logActionAuto, parentRef } from '../../lib/api';
+import type { AlerteCalculee } from '../../lib/types';
+import { moteurCoherence, santeGlobale, type DonneesCoherence, type EntiteSuivie } from '../../lib/coherence';
 import { fmtDate } from '../../lib/format';
 import { Btn, Empty, Prudence, useToast } from '../ui';
 import type { Alerte } from '../../lib/types';
 
 // Moteur de cohérence : analyse à la demande, alertes persistées,
-// passage en actions, accusés de réception.
+// passage en actions, accusés de réception. Réutilisé tel quel par un
+// contrat ou par un objet du moteur universel (donnees.entiteRacine).
 export default function OngletAlertes({ contrat, donnees, alertes, onChange }: {
-  contrat: Contrat;
+  contrat: EntiteSuivie;
   donnees: DonneesCoherence;
   alertes: Alerte[];
   onChange: () => void;
 }) {
+  const estObjet = donnees.entiteRacine === 'objet';
+  const contratId = estObjet ? undefined : contrat.id;
+  const objetId = estObjet ? contrat.id : undefined;
   const { toastEl, ok, err } = useToast();
   const [analyse, setAnalyse] = useState(false);
   const [calculees, setCalculees] = useState<AlerteCalculee[] | null>(null);
@@ -34,7 +38,7 @@ export default function OngletAlertes({ contrat, donnees, alertes, onChange }: {
         const k = `${r.code}|${r.entite_type}|${r.entite_id}`;
         if (cles.has(k)) continue;
         await api.alertes.create({
-          contrat_id: contrat.id, code: r.code, gravite: r.gravite,
+          ...parentRef(contratId, objetId), code: r.code, gravite: r.gravite,
           titre: r.titre, message: r.message, entite_type: r.entite_type,
           entite_id: r.entite_id, statut: 'active', action_suggeree: r.action_suggeree,
         });
@@ -51,8 +55,9 @@ export default function OngletAlertes({ contrat, donnees, alertes, onChange }: {
       }
       // Santé globale
       const sante = santeGlobale(res);
-      await api.contrats.update(contrat.id, { sante });
-      await logAction(contrat.id, 'coherence_analysee', 'contrat', contrat.id, { alertes: res.length, sante, nouvelles: ajoutees });
+      if (estObjet) await api.objets.update(contrat.id, { sante });
+      else await api.contrats.update(contrat.id, { sante });
+      await logActionAuto(contratId, objetId, 'coherence_analysee', estObjet ? 'objet' : 'contrat', contrat.id, { alertes: res.length, sante, nouvelles: ajoutees });
       onChange();
       ok(`Analyse terminée : ${res.length} signalement(s), ${ajoutees} nouveau(x). Santé : ${sante === 'saine' ? 'saine' : sante === 'attention' ? 'à surveiller' : 'critique'}.`);
     } catch (e: any) {
@@ -65,7 +70,7 @@ export default function OngletAlertes({ contrat, donnees, alertes, onChange }: {
   const statutAlerte = async (a: Alerte, statut: string) => {
     try {
       await api.alertes.update(a.id, { statut });
-      await logAction(contrat.id, 'alerte_statut', 'alerte', a.id, { de: a.statut, vers: statut });
+      await logActionAuto(contratId, objetId, 'alerte_statut', 'alerte', a.id, { de: a.statut, vers: statut });
       onChange();
     } catch (e: any) { err(e.message); }
   };
@@ -73,13 +78,13 @@ export default function OngletAlertes({ contrat, donnees, alertes, onChange }: {
   const versAction = async (a: Alerte) => {
     try {
       const act = await api.actions.create({
-        contrat_id: contrat.id,
+        ...parentRef(contratId, objetId),
         titre: a.titre, description: `${a.message}\n\nPiste suggérée : ${a.action_suggeree || '—'}`,
         priorite: a.gravite === 'critique' ? 'haute' : 'normale',
         statut: 'a_faire', alerte_id: a.id,
       });
       await api.alertes.update(a.id, { statut: 'reconnue' });
-      await logAction(contrat.id, 'action_creee', 'action', act.id, { depuis_alerte: a.id });
+      await logActionAuto(contratId, objetId, 'action_creee', 'action', act.id, { depuis_alerte: a.id });
       onChange();
       ok('Action créée depuis l’alerte.');
     } catch (e: any) { err(e.message); }

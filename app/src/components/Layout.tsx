@@ -2,13 +2,16 @@ import { NavLink, Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, Users, GitBranch, Bell, FolderOpen,
   Plus, Scale, Menu, X, FlaskConical, Layers, ShieldCheck, Sparkles,
+  Globe2, Boxes,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 
 const LIENS = [
   { to: '/', label: 'Pilotage', icon: LayoutDashboard, exact: true },
+  { to: '/univers', label: 'Univers', icon: Globe2 },
   { to: '/contrats', label: 'Contrats & pactes', icon: FileText },
+  { to: '/objets', label: 'Objets suivis', icon: Boxes },
   { to: '/parties', label: 'Parties', icon: Users },
   { to: '/modeles', label: 'Modèles', icon: Layers },
   { to: '/evenements', label: 'Événements', icon: GitBranch },

@@ -1,14 +1,17 @@
 import { useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
-import { api, logAction } from '../../lib/api';
+import { api, logActionAuto, parentRef } from '../../lib/api';
 import type { ContratPartie, Echeance, Engagement, Evenement, Preuve } from '../../lib/types';
 import { fmtDate, delaiHumain, joursRestants } from '../../lib/format';
 import { Btn, Empty, Field, Modal, inputCls, useToast } from '../ui';
 
 // Chaque engagement = objet suivi : QUI / FAIT QUOI / POUR QUI / QUAND / OÙ /
 // CONDITIONS / PREUVE / SI NON REMPLI.
-export default function OngletEngagements({ contratId, engagements, liens, echeances = [], evenements = [], preuves = [], onChange }: {
-  contratId: number;
+// Réutilisé tel quel par un contrat (contratId) ou par un objet du moteur
+// universel (objetId) : même table, même logique, aucune duplication.
+export default function OngletEngagements({ contratId, objetId, engagements, liens, echeances = [], evenements = [], preuves = [], onChange }: {
+  contratId?: number;
+  objetId?: number;
   engagements: Engagement[];
   liens: ContratPartie[];
   echeances?: Echeance[];
@@ -47,7 +50,7 @@ export default function OngletEngagements({ contratId, engagements, liens, echea
     setBusy(true);
     try {
       const payload = {
-        contrat_id: contratId,
+        ...parentRef(contratId, objetId),
         titre: form.titre.trim(),
         description: form.description || null,
         qui_partie_id: form.qui_partie_id ? Number(form.qui_partie_id) : null,
@@ -65,10 +68,10 @@ export default function OngletEngagements({ contratId, engagements, liens, echea
       };
       if (edit) {
         await api.engagements.update(edit.id, payload);
-        await logAction(contratId, 'engagement_modifie', 'engagement', edit.id, { titre: form.titre });
+        await logActionAuto(contratId, objetId, 'engagement_modifie', 'engagement', edit.id, { titre: form.titre });
       } else {
         const c = await api.engagements.create(payload);
-        await logAction(contratId, 'engagement_cree', 'engagement', c.id, { titre: form.titre });
+        await logActionAuto(contratId, objetId, 'engagement_cree', 'engagement', c.id, { titre: form.titre });
       }
       setModal(false);
       onChange();
@@ -79,7 +82,7 @@ export default function OngletEngagements({ contratId, engagements, liens, echea
   const changerStatut = async (g: Engagement, statut: string) => {
     try {
       await api.engagements.update(g.id, { statut });
-      await logAction(contratId, 'engagement_statut', 'engagement', g.id, { de: g.statut, vers: statut });
+      await logActionAuto(contratId, objetId, 'engagement_statut', 'engagement', g.id, { de: g.statut, vers: statut });
       onChange();
       ok(`Engagement → ${statutLabel(statut)}.`);
     } catch (e: any) { err(e.message); }
@@ -102,7 +105,7 @@ export default function OngletEngagements({ contratId, engagements, liens, echea
         ...evLiees.map((e) => api.evenements.update(e.id, { engagement_ids: (e.engagement_ids || []).filter((id) => id !== g.id) })),
         ...preLiees.map((p) => api.preuves.update(p.id, { engagement_id: null })),
       ]);
-      await logAction(contratId, 'engagement_supprime', 'engagement', g.id, { titre: g.titre, elements_dissocies: nbLies });
+      await logActionAuto(contratId, objetId, 'engagement_supprime', 'engagement', g.id, { titre: g.titre, elements_dissocies: nbLies });
       onChange();
       ok(nbLies > 0 ? `Engagement supprimé — ${nbLies} élément(s) dissocié(s).` : 'Engagement supprimé.');
     } catch (e: any) { err(e.message); }

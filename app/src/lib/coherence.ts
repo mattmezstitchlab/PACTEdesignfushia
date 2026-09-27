@@ -10,13 +10,29 @@
 // « à vérifier », « susceptible de ».
 // ============================================================
 import type {
-  AlerteCalculee, Clause, Contrat, ContratPartie, Echeance, Engagement,
+  AlerteCalculee, Clause, ContratPartie, Echeance, Engagement,
   Evenement, Preuve, Version,
 } from './types';
 import { joursRestants } from './format';
 
+// Le moteur de cohérence s'applique aussi bien à un CONTRAT qu'à un OBJET
+// du moteur universel (Projet, Œuvre, Actif…) : seule cette forme
+// structurelle minimale est requise, jamais le type `Contrat` complet.
+// Un `Contrat` la satisfait déjà tel quel ; pour un `Objet`, l'appelant
+// mappe simplement `valeur_declaree` -> `montant_total`.
+export interface EntiteSuivie {
+  id: number;
+  pays: string | null;
+  droit_applicable: string | null;
+  devise: string | null;
+  montant_total: number | null;
+  statut: string | null;
+  date_debut: string | null;
+  date_fin: string | null;
+}
+
 export interface DonneesCoherence {
-  contrat: Contrat;
+  contrat: EntiteSuivie;
   engagements: Engagement[];
   echeances: Echeance[];
   evenements: Evenement[];
@@ -24,6 +40,10 @@ export interface DonneesCoherence {
   clauses: Clause[];
   parties: ContratPartie[];
   versions: Version[];
+  // 'objet' désactive les vérifications propres au circuit de signature
+  // contractuel (parties/signatures/clauses), qui n'existent pas encore
+  // pour les objets du moteur universel (voir OngletRelations à la place).
+  entiteRacine?: 'contrat' | 'objet';
 }
 
 const R = (code: string, gravite: AlerteCalculee['gravite'], titre: string, message: string,
@@ -33,6 +53,8 @@ const R = (code: string, gravite: AlerteCalculee['gravite'], titre: string, mess
 export function moteurCoherence(d: DonneesCoherence): AlerteCalculee[] {
   const alertes: AlerteCalculee[] = [];
   const { contrat, engagements, echeances, evenements, preuves, clauses, parties, versions } = d;
+  const racine = d.entiteRacine || 'contrat';
+  const typeRacine = racine === 'contrat' ? 'contrat' : 'objet';
 
   // ---------- 1. ÉCHÉANCES ----------
   for (const e of echeances) {
@@ -139,7 +161,7 @@ export function moteurCoherence(d: DonneesCoherence): AlerteCalculee[] {
     alertes.push(R('DATES_INCOHERENTES', 'critique',
       `Dates du contrat incohérentes`,
       `La date de fin (${contrat.date_fin.slice(0, 10)}) est antérieure à la date de début (${contrat.date_debut.slice(0, 10)}).`,
-      'contrat', contrat.id, `Corriger les dates du contrat.`));
+      typeRacine, contrat.id, `Corriger les dates du contrat.`));
   }
   // 3c. Échéance hors période du contrat
   if (contrat.date_debut || contrat.date_fin) {
@@ -165,7 +187,7 @@ export function moteurCoherence(d: DonneesCoherence): AlerteCalculee[] {
     alertes.push(R('ANNULATION_SANS_ACTE', 'attention',
       `Annulation enregistrée sans acte modificatif`,
       `Un événement d'annulation existe mais aucun avenant ni acte écrit n'est rattaché. Une annulation devrait être formalisée par écrit et signée.`,
-      'contrat', contrat.id, `Rédiger un avenant d'annulation / résiliation et le faire signer.`));
+      typeRacine, contrat.id, `Rédiger un avenant d'annulation / résiliation et le faire signer.`));
   }
   // 3e. Paiement enregistré supérieur au montant total
   const totalPaye = evenements
@@ -175,7 +197,7 @@ export function moteurCoherence(d: DonneesCoherence): AlerteCalculee[] {
     alertes.push(R('PAIEMENT_SUPERIEUR', 'attention',
       `Paiements enregistrés supérieurs au montant du contrat`,
       `Le cumul des paiements déclarés (${Math.round(totalPaye)} ${contrat.devise || ''}) dépasse le montant total du contrat (${contrat.montant_total} ${contrat.devise || ''}). Vérifiez les montants saisis.`,
-      'contrat', contrat.id, `Vérifier les événements de paiement (doublon, acompte, frais annexes…).`));
+      typeRacine, contrat.id, `Vérifier les événements de paiement (doublon, acompte, frais annexes…).`));
   }
 
   // ---------- 4. MODIFICATION NON SIGNÉE ----------
@@ -196,29 +218,31 @@ export function moteurCoherence(d: DonneesCoherence): AlerteCalculee[] {
     alertes.push(R('VERSION_BROUILLON', 'info',
       `${brouillons.length} version(s) en brouillon`,
       `Des modifications de clauses existent en brouillon mais ne sont pas validées. Elles ne produisent aucun effet tant qu'elles ne sont pas validées puis signées.`,
-      'contrat', contrat.id, `Valider ou abandonner les versions en brouillon.`));
+      typeRacine, contrat.id, `Valider ou abandonner les versions en brouillon.`));
   }
 
   // ---------- 5. SIGNATURES ----------
-  const nonSignees = parties.filter((p) => p.signature_statut !== 'signee');
-  if (parties.length > 0 && nonSignees.length > 0 && contrat.statut === 'actif') {
+  // Circuit propre au contrat (parties + signature_statut) : les objets
+  // du moteur universel utilisent les Relations, pas encore de signature.
+  const nonSignees = racine === 'contrat' ? parties.filter((p) => p.signature_statut !== 'signee') : [];
+  if (racine === 'contrat' && parties.length > 0 && nonSignees.length > 0 && contrat.statut === 'actif') {
     alertes.push(R('SIGNATURE_MANQUANTE', 'critique',
       `${nonSignees.length} signature(s) manquante(s) sur un contrat actif`,
       `Le contrat est marqué « actif » alors que ${nonSignees.map((p) => p.partie?.nom || 'une partie').join(', ')} n'a pas encore signé. Un contrat non signé par toutes les parties présente un risque probatoire majeur.`,
-      'contrat', contrat.id, `Recueillir les signatures manquantes avant toute exécution.`));
-  } else if (parties.length > 0 && nonSignees.length > 0 && contrat.statut === 'brouillon') {
+      typeRacine, contrat.id, `Recueillir les signatures manquantes avant toute exécution.`));
+  } else if (racine === 'contrat' && parties.length > 0 && nonSignees.length > 0 && contrat.statut === 'brouillon') {
     alertes.push(R('SIGNATURE_MANQUANTE', 'info',
       `Signatures en attente (${nonSignees.length}/${parties.length})`,
       `Le contrat est encore en brouillon : pensez à recueillir toutes les signatures avant de le passer en « actif ».`,
-      'contrat', contrat.id, `Finaliser le document puis recueillir les signatures.`));
+      typeRacine, contrat.id, `Finaliser le document puis recueillir les signatures.`));
   }
   // Refus de signature
-  const refus = parties.filter((p) => p.signature_statut === 'refusee');
+  const refus = racine === 'contrat' ? parties.filter((p) => p.signature_statut === 'refusee') : [];
   if (refus.length > 0) {
     alertes.push(R('SIGNATURE_REFUSEE', 'critique',
       `Signature refusée par ${refus.map((p) => p.partie?.nom || 'une partie').join(', ')}`,
       `Un refus de signature bloque la formation du contrat en l'état. Il faut renégocier, amender, ou constater l'échec de l'accord par écrit.`,
-      'contrat', contrat.id, `Renégocier les points bloquants ou constater l'échec par écrit.`));
+      typeRacine, contrat.id, `Renégocier les points bloquants ou constater l'échec par écrit.`));
   }
 
   // ---------- 6. DOCUMENTS / PREUVES MANQUANTS ----------
@@ -247,11 +271,11 @@ export function moteurCoherence(d: DonneesCoherence): AlerteCalculee[] {
   }
   // Contrat actif sans document signé versé aux preuves
   const aContratSigne = preuves.some((p) => p.type === 'contrat_signe');
-  if ((contrat.statut === 'actif' || contrat.statut === 'termine') && !aContratSigne) {
+  if (racine === 'contrat' && (contrat.statut === 'actif' || contrat.statut === 'termine') && !aContratSigne) {
     alertes.push(R('CONTRAT_SIGNE_ABSENT', 'attention',
       `Aucune copie du contrat signé dans les preuves`,
       `Le contrat est « ${contrat.statut} » mais aucune copie signée n'est versée à la chaîne documentaire. Conservez impérativement l'exemplaire signé de chaque partie.`,
-      'contrat', contrat.id, `Verser la copie signée du contrat dans les Preuves.`));
+      typeRacine, contrat.id, `Verser la copie signée du contrat dans les Preuves.`));
   }
 
   // ---------- 7. ÉVÉNEMENTS SUSCEPTIBLES D'AFFECTER UNE OBLIGATION ----------
@@ -277,19 +301,19 @@ export function moteurCoherence(d: DonneesCoherence): AlerteCalculee[] {
     alertes.push(R('DROIT_APPLICABLE_ABSENT', 'attention',
       `Pays et droit applicable non renseignés`,
       `Sans juridiction identifiée, PACTE ne peut pas contextualiser les rappels et l'interprétation des clauses reste plus incertaine. Le droit applicable détermine largement les effets d'un contrat.`,
-      'contrat', contrat.id, `Renseigner le pays et, si possible, le droit applicable et la ville.`));
+      typeRacine, contrat.id, `Renseigner le pays et, si possible, le droit applicable et la ville.`));
   }
-  if (clauses.length === 0 && (contrat.statut === 'actif' || contrat.statut === 'termine')) {
+  if (racine === 'contrat' && clauses.length === 0 && (contrat.statut === 'actif' || contrat.statut === 'termine')) {
     alertes.push(R('AUCUNE_CLAUSE', 'attention',
       `Aucune clause structurée`,
       `Ce contrat ne contient aucune clause détaillée. Le document généré reposera uniquement sur l'objet et les engagements : envisagez de structurer les clauses essentielles.`,
-      'contrat', contrat.id, `Ajouter au minimum : objet, prix, durée, résiliation, responsabilités.`));
+      typeRacine, contrat.id, `Ajouter au minimum : objet, prix, durée, résiliation, responsabilités.`));
   }
-  if (parties.length < 2 && contrat.statut !== 'archive') {
+  if (racine === 'contrat' && parties.length < 2 && contrat.statut !== 'archive') {
     alertes.push(R('PARTIES_INSUFFISANTES', 'info',
       `Moins de deux parties rattachées`,
       `Un contrat suppose en principe au moins deux parties. Rattachez toutes les parties concernées (une personne peut participer à plusieurs contrats).`,
-      'contrat', contrat.id, `Ajouter la ou les parties manquantes depuis l'annuaire.`));
+      typeRacine, contrat.id, `Ajouter la ou les parties manquantes depuis l'annuaire.`));
   }
 
   // Tri : critique → attention → info
